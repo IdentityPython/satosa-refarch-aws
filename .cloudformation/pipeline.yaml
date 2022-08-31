@@ -677,7 +677,7 @@ Resources:
             Version: 2012-10-17
             Statement:
               - Effect: Allow
-                Action: codepipeline.StartPipelineExecution
+                Action: codepipeline:StartPipelineExecution
                 Resource: !Sub arn:${AWS::Partition}:codepipeline:${AWS::Region}:${AWS::AccountId}:${Pipeline}
   CodeCommitRepoConnectorEventRule:
     Type: AWS::Events::Rule
