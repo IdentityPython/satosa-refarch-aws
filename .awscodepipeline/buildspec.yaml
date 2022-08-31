@@ -1,0 +1,30 @@
+---
+version: 0.2
+phases:
+  install:
+    runtime-versions:
+      nodejs: 12
+    commands:
+      - TEMP_ROLE=`aws sts assume-role --role-arn $CODE_BUILD_SERVICE_ROLE_ARN --role-session-name test`
+      - export TEMP_ROLE
+      - echo $TEMP_ROLE
+      - export AWS_ACCESS_KEY_ID=$(echo "${TEMP_ROLE}" | jq -r '.Credentials.AccessKeyId')
+      - export AWS_SECRET_ACCESS_KEY=$(echo "${TEMP_ROLE}" | jq -r '.Credentials.SecretAccessKey')
+      - export AWS_SESSION_TOKEN=$(echo "${TEMP_ROLE}" | jq -r '.Credentials.SessionToken')
+      - echo $AWS_ACCESS_KEY_ID
+      - echo $AWS_SECRET_ACCESS_KEY
+      - echo $AWS_SESSION_TOKEN
+  pre_build:
+    commands:
+      - $(aws ecr get-login --no-include-email)
+      - TAG="$(echo $CODE_BUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
+      - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
+  build:
+    commands:
+      - docker build --tag "$IMAGE_URI" ./
+  post_build:
+    commands:
+      - docker push "$IMAGE_URI"
+      - printf '[{"name":"satosa","imageUri":"%s"}]' "$IMAGE_URI" > images.json
+artifacts:
+  files: images.json
