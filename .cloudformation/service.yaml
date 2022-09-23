@@ -1,0 +1,507 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+
+
+Description: >-
+  Blue/green ECS deployment for SATOSA
+
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterLabels:
+      VpcType:
+        default: New or Existing VPC
+      VpcCidr:
+        default: New VPC IPv4 CIDR Block
+      PublicSubnet1Cidr:
+        default: New VPC Public Subnet 1 IPv4 Address
+      PublicSubnet2Cidr:
+        default: New VPC Public Subnet 2 IPv4 Address
+      PrivateSubnet1Cidr:
+        default: New VPC Private Subnet 1 IPv4 Address
+      PrivateSubnet2Cidr:
+        default: New VPC Private Subnet 2 IPv4 Address
+      VpcId:
+        default: Existing VPC ID
+      PublicSubnet1Id:
+        default: Existing VPC Public Subnet 1 ID
+      PublicSubnet2Id:
+        default: Existing VPC Public Subnet 2 ID
+      PrivateSubnet1Id:
+        default: Existing VPC Private Subnet 1 ID
+      PrivateSubnet2Id:
+        default: Existing VPC Private Subnet 2 ID
+      
+    ParameterGroups:
+      - Label:
+          default: Networking
+        Parameters:
+          - VpcType
+          - VpcCidr
+          - PublicSubnet1Cidr
+          - PublicSubnet2Cidr
+          - PrivateSubnet1Cidr
+          - PrivateSubnet2Cidr
+          - VpcId
+          - PublicSubnet1Id
+          - PublicSubnet2Id
+          - PrivateSubnet1Id
+          - PrivateSubnet2Id
+
+
+Parameters:
+  VpcType:
+    Type: String
+    Default: New
+    Description: >-
+      The stack will create a new VPC (the default) or deploy into an existing one.
+    AllowedValues:
+      - New
+      - Existing
+  VpcCidr:
+    Type: String
+    Default: 192.168.0.0/16
+    Description: >-
+      When creating a new VPC, the stack will use this IPv4 CIDR block.
+  PublicSubnet1Cidr:
+    Type: String
+    Default: 192.168.0.0/18
+    Description: >-
+      When creating a new VPC, the stack will use this subnet of the VPC's IPv4 CIDR block for the first public subnet.
+  PublicSubnet2Cidr:
+    Type: String
+    Default: 192.168.64.0/18
+    Description: >-
+      When creating a new VPC, the stack will use this subnet of the VPC's IPv4 CIDR block for the second public subnet.
+  PrivateSubnet1Cidr:
+    Type: String
+    Default: 192.168.128.0/18
+    Description: >-
+      When creating a new VPC, the stack will use this subnet of the VPC's IPv4 CIDR block for the first private subnet.
+  PrivateSubnet2Cidr:
+    Type: String
+    Default: 192.168.192.0/18
+    Description: >-
+      When creating a new VPC, the stack will use this subnet of the VPC's IPv4 CIDR block for the second private subnet.
+  VpcId:
+    Type: String
+    Default: ''
+    Description: >-
+      If using an existing VPC, the stack will create resources in the VPC with this identifier.
+  PublicSubnet1Id:
+    Type: String
+    Default: ''
+    Description: >-
+      If using an existing VPC, the stack will use this subnet ID as the first public subnet.
+  PublicSubnet2Id:
+    Type: String
+    Default: ''
+    Description: >-
+      If using an existing VPC, the stack will use this subnet ID as the second public subnet.
+  PrivateSubnet1Id:
+    Type: String
+    Default: ''
+    Description: >-
+      If using an existing VPC, the stack will use this subnet ID as the first private subnet.
+  PrivateSubnet2Id:
+    Type: String
+    Default: ''
+    Description: >-
+      If using an existing VPC, the stack will use this subnet ID as the second private subnet.
+  # Vpc:
+  #   Type: AWS::EC2::VPC::Id
+  # Subnet1:
+  #   Type: AWS::EC2::Subnet::Id
+  # Subnet2:
+  #   Type: AWS::EC2::Subnet::Id
+
+
+Conditions:
+  WithNewVpc:
+    !Equals [ !Ref VpcType, New ]
+  WithExistingVpc:
+    !Equals [ !Ref VpcType, Existing ]
+
+
+Transform:
+  - AWS::CodeDeployBlueGreen
+
+
+Hooks:
+  CodeDeployBlueGreenHook:
+    Type: AWS::CodeDeploy::BlueGreen
+    Properties:
+      TrafficRoutingConfig:
+        Type: TimeBasedCanary
+        TimeBasedCanary:
+          StepPercentage: 15
+          BakeTimeMins: 5
+      Applications:
+        - Target:
+            Type: AWS::ECS::Service
+            LogicalID: EcsService
+          ECSAttributes:
+            TaskDefinitions:
+              - BlueTaskDefinition
+              - GreenTaskDefinition
+            TaskSets:
+              - BlueTaskSet
+              - GreenTaskSet
+            TrafficRouting:
+              ProdTrafficRoute:
+                Type: AWS::ElasticLoadBalancingV2::Listener
+                LogicalID: AlbListenerHttp
+              TargetGroups:
+                - BlueAlbTargetGroup
+                - GreenAlbTargetGroup
+
+
+Resources:
+  # conditionally deploy the service in a new VPC
+  VPC:
+    Type: AWS::EC2::VPC
+    Condition: WithNewVpc
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Ref AWS::StackName
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Condition: WithNewVpc
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Ref AWS::StackName
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Condition: WithNewVpc
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Condition: WithNewVpc
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: !Ref PublicSubnet1Cidr
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName} Public Subnet (AZ1)
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Condition: WithNewVpc
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 1, !GetAZs  '' ]
+      CidrBlock: !Ref PublicSubnet2Cidr
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName} Public Subnet (AZ2)
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Condition: WithNewVpc
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 0, !GetAZs  '' ]
+      CidrBlock: !Ref PrivateSubnet1Cidr
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName} Private Subnet (AZ1)
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Condition: WithNewVpc
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 1, !GetAZs  '' ]
+      CidrBlock: !Ref PrivateSubnet2Cidr
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName} Private Subnet (AZ2)
+  NatGateway1EIP:
+    Type: AWS::EC2::EIP
+    Condition: WithNewVpc
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+  NatGateway2EIP:
+    Type: AWS::EC2::EIP
+    Condition: WithNewVpc
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+  NatGateway1:
+    Type: AWS::EC2::NatGateway
+    Condition: WithNewVpc
+    Properties:
+      AllocationId: !GetAtt NatGateway1EIP.AllocationId
+      SubnetId: !Ref PublicSubnet1
+  NatGateway2:
+    Type: AWS::EC2::NatGateway
+    Condition: WithNewVpc
+    Properties:
+      AllocationId: !GetAtt NatGateway2EIP.AllocationId
+      SubnetId: !Ref PublicSubnet2
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Condition: WithNewVpc
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName} Public Routes
+  DefaultPublicRoute:
+    Type: AWS::EC2::Route
+    Condition: WithNewVpc
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: WithNewVpc
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet1
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: WithNewVpc
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet2
+  PrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Condition: WithNewVpc
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName} Private Routes (AZ1)
+  DefaultPrivateRoute1:
+    Type: AWS::EC2::Route
+    Condition: WithNewVpc
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway1
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: WithNewVpc
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      SubnetId: !Ref PrivateSubnet1
+  PrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Condition: WithNewVpc
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName} Private Routes (AZ2)
+  DefaultPrivateRoute2:
+    Type: AWS::EC2::Route
+    Condition: WithNewVpc
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable2
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway2
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: WithNewVpc
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable2
+      SubnetId: !Ref PrivateSubnet2
+
+  # put the service behind an application load balancer
+  AlbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub ${AWS::StackName}-alb
+      VpcId: !If [ WithNewVpc, !Ref VPC, !Ref VpcId ]
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: TCP
+          FromPort: 80
+          ToPort: 80
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: TCP
+          FromPort: 443
+          ToPort: 443
+  EcsSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for ec2 access
+      VpcId: !If [ WithNewVpc, !Ref VPC, !Ref VpcId ]
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+  BlueAlbTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 5
+      HealthCheckPath: /ping
+      HealthCheckPort: '8080'
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 2
+      HealthyThresholdCount: 2
+      Matcher:
+        HttpCode: '200'
+      Port: 8080
+      Protocol: HTTP
+      Tags:
+        - Key: Group
+          Value: Example
+      TargetType: ip
+      UnhealthyThresholdCount: 4
+      VpcId: !If [ WithNewVpc, !Ref VPC, !Ref VpcId ]
+  GreenAlbTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 5
+      HealthCheckPath: /
+      HealthCheckPort: '80'
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 2
+      HealthyThresholdCount: 2
+      Matcher:
+        HttpCode: '200'
+      Port: 80
+      Protocol: HTTP
+      Tags:
+        - Key: Group
+          Value: Example
+      TargetType: ip
+      UnhealthyThresholdCount: 4
+      VpcId: !If [ WithNewVpc, !Ref VPC, !Ref VpcId ]
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Scheme: internet-facing
+      SecurityGroups:
+        - !Ref AlbSecurityGroup
+      Subnets:
+        - !If [ WithNewVpc, !Ref PublicSubnet1, !Ref PublicSubnet1Id ]
+        - !If [ WithNewVpc, !Ref PublicSubnet2, !Ref PublicSubnet2Id ]
+      Tags:
+        - Key: Group
+          Value: Example
+      Type: application
+      IpAddressType: ipv4
+  AlbListenerHttp:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          ForwardConfig:
+            TargetGroups:
+              - TargetGroupArn: !Ref BlueAlbTargetGroup
+                Weight: 1
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: HTTP
+  AlbListenerHttpRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+        - Type: forward
+          ForwardConfig:
+            TargetGroups:
+              - TargetGroupArn: !Ref BlueAlbTargetGroup
+                Weight: 1
+      Conditions:
+        - Field: http-header
+          HttpHeaderConfig:
+            HttpHeaderName: User-Agent
+            Values:
+              - Mozilla
+      ListenerArn: !Ref AlbListenerHttp
+      Priority: 1
+
+  EcsTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+  BlueTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ExecutionRoleArn: !GetAtt EcsTaskExecutionRole.Arn
+      ContainerDefinitions:
+        - Name: WebApp
+          Image: satosa
+          Essential: true
+          PortMappings:
+            - HostPort: 8080
+              Protocol: tcp
+              ContainerPort: 8080
+      RequiresCompatibilities:
+        - FARGATE
+      NetworkMode: awsvpc
+      Cpu: 256
+      Memory: 512
+      Family: ecs-demo
+  EcsCluster:
+    Type: AWS::ECS::Cluster
+  EcsService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref EcsCluster
+      DesiredCount: 1
+      DeploymentController:
+        Type: EXTERNAL
+  BlueTaskSet:
+    Type: AWS::ECS::TaskSet
+    Properties:
+      Cluster: !Ref EcsCluster
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsVpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - !Ref EcsSecurityGroup
+          Subnets:
+            - !If [ WithNewVpc, !Ref PrivateSubnet1, !Ref PrivateSubnet1Id ]
+            - !If [ WithNewVpc, !Ref PrivateSubnet2, !Ref PrivateSubnet2Id ]
+      PlatformVersion: 1.4.0
+      Scale:
+        Unit: PERCENT
+        Value: 100
+      Service: !Ref EcsService
+      TaskDefinition: !Ref BlueTaskDefinition
+      LoadBalancers:
+        - ContainerName: WebApp
+          ContainerPort: 8080
+          TargetGroupArn: !Ref BlueAlbTargetGroup
+  PrimaryTaskSet:
+    Type: AWS::ECS::PrimaryTaskSet
+    Properties:
+      Cluster: !Ref EcsCluster
+      Service: !Ref EcsService
+      TaskSetId: !GetAtt BlueTaskSet.Id
