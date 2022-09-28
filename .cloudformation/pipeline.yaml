@@ -580,7 +580,6 @@ Resources:
                   - codebuild:BatchGetBuilds
                   - iam:PassRole
                 Resource: '*'
-
   Pipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
@@ -703,6 +702,7 @@ Resources:
         - Id: !Ref Pipeline
           Arn: !Sub arn:${AWS::Partition}:codepipeline:${AWS::Region}:${AWS::AccountId}:${Pipeline}
           RoleArn: !GetAtt CodeCommitRepoConnectorRole.Arn
+
 
 Outputs:                        # sorted alphabetically by output key name in the web console
   CertificateArn:
