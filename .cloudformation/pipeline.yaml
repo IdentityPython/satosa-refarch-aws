@@ -656,9 +656,11 @@ Resources:
           RoleArn: !GetAtt PipelineWeeklyRefreshRole.Arn
           Id: codepipeline-AppPipeline
 
-  # Event Bridge detects changes to the CodeCommit repository and
+  # EventBridge detects changes to the CodeCommit repository and
   # triggers the continuous delivery pipeline, similar to CodeStar
-  # Connections
+  # Connections and third-party Git repository hosting services;
+  # cf. https://aws.amazon.com/blogs/devops/build-serverless-aws-codecommit-workflows-using-amazon-cloudwatch-events-and-jgit,
+  # https://github.com/awslabs/serverless-codecommit-examples
   CodeCommitRepoConnectorRole:
     Type: AWS::IAM::Role
     Condition: UseCodeCommit
