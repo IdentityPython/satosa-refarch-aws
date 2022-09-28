@@ -541,7 +541,6 @@ Resources:
       CertificateAuthortityArn: !If [ UsePublicCertificateAuthority, !Ref AWS::NoValue, !Ref CertificateAuthorityArn ]
       CertificateTransparencyLoggingPreference: !Ref CtLoggingPref
 
-  # grants elevated permissions to deploy the service
   CodePipelineServiceRole:
     Type: AWS::IAM::Role
     Properties:
