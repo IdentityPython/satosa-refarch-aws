@@ -417,7 +417,7 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              Service: codebuild.amazonaws.com
+              Service: !Sub codebuild.${AWS::URLSuffix}
             Action: sts:AssumeRole
   CodeBuildServiceRolePolicy:
     Type: AWS::IAM::Policy
@@ -453,7 +453,7 @@ Resources:
               - ec2:CreateNetworkInterfacePermission
             Condition:
               StringEquals:
-                'ec2:AuthorizedService': codebuild.amazonaws.com
+                'ec2:AuthorizedService': !Sub codebuild.${AWS::URLSuffix}
                 'ec2:Subnet':
                   - !Sub arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:subnet/${PrivateSubnet1}
                   - !Sub arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:subnet/${PrivateSubnet2}
@@ -549,7 +549,7 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              Service: codepipeline.amazonaws.com
+              Service: !Sub codepipeline.${AWS::URLSuffix}
             Action: sts:AssumeRole
       Policies:
         - PolicyName: Artifacts
@@ -635,7 +635,7 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              Service: events.amazonaws.com
+              Service: !Sub events.${AWS::URLSuffix}
             Action: sts:AssumeRole
       Policies:
         - PolicyName: InvokePipeline
@@ -668,8 +668,7 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              Service:
-                - events.amazonaws.com
+              Service: !Sub events.${AWS::URLSuffix}
             Action: sts:AssumeRole
       Policies:
         - PolicyName: CodeCommitRepoConnector
