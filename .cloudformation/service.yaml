@@ -445,7 +445,7 @@ Resources:
           - Sid: ''
             Effect: Allow
             Principal:
-              Service: ecs-tasks.amazonaws.com
+              Service: !Sub ecs-tasks.${AWS::URLSuffix}
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
