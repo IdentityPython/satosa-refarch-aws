@@ -542,10 +542,24 @@ Resources:
             Principal:
               Service: !Sub codepipeline.${AWS::URLSuffix}
             Action: sts:AssumeRole
+  CodePipelineCfnActionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: !Sub codepipeline.${AWS::URLSuffix}
+            Action: sts:AssumeRole
+      # TODO: restrict this role's access to only what's needed
+      ManagedPolicyArns:
+        -  arn:aws:iam::aws:policy/AdministratorAccess
   CodePipelineServiceRolePolicy:
     Type: AWS::IAM::Policy
     DependsOn:
       - CodePipelineServiceRole
+      - CodePipelineCfnActionRole
     Properties:
       PolicyName: !Sub ${AWS::StackName}-CodePipelineServiceRolePolicy
       Roles:
@@ -588,10 +602,12 @@ Resources:
               - iam:PassRole
             Resource:
               - !GetAtt CodeBuildServiceRole.Arn
+              - !GetAtt CodePipelineCfnActionRole.Arn
   Pipeline:
     Type: AWS::CodePipeline::Pipeline
     DependsOn:
       - CodePipelineServiceRole
+      - CodePipelineCfnActionRole
       - ArtifactBucket
     Properties:
       RoleArn: !GetAtt CodePipelineServiceRole.Arn
@@ -635,6 +651,26 @@ Resources:
               OutputArtifacts:
                 - Name: BuildArtifact
               RunOrder: 2
+        - Name: Deploy
+          Actions:
+            - Name: Deploy
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: 1
+              Configuration:
+                StackName: !Ref StackName
+                # don't delete and replace stacks in a failed state as
+                # that would also delete their logs, which must be
+                # preserved in regulated environments
+                ActionMode: CREATE_UPDATE
+                Capabilities: CAPABILITY_NAMED_IAM,CAPABILITY_AUTO_EXPAND
+                RoleArn: !GetAtt CodePipelineCfnActionRole.Arn
+                TemplatePath: BuildArtifact::service.yaml
+              InputArtifacts:
+                - Name: BuildArtifact
+              RunOrder: 3
 
   # keep the service up to date by rebuilding and redeploying it
   # weekly even when the configuration doesn't change
