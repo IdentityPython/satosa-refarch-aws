@@ -419,73 +419,69 @@ Resources:
             Principal:
               Service: !Sub codebuild.${AWS::URLSuffix}
             Action: sts:AssumeRole
-  CodeBuildServiceRolePolicy:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: !Sub ${AWS::StackName}-CodeBuildServiceRolePolicy
-      Roles:
-        - !Ref CodeBuildServiceRole
-      PolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Action:
-              - sts:AssumeRole
-            Resource: !GetAtt CodeBuildServiceRole.Arn
-          - Effect: Allow
-            Action:
-              - logs:CreateLogGroup
-              - logs:CreateLogStream
-              - logs:PutLogEvents
-            Resource: '*'
-          - Effect: Allow
-            Action:
-              - ec2:CreateNetworkInterface
-              - ec2:DescribeDhcpOptions
-              - ec2:DescribeNetworkInterfaces
-              - ec2:DeleteNetworkInterface
-              - ec2:DescribeSubnets
-              - ec2:DescribeSecurityGroups
-              - ec2:DescribeVpcs
-            Resource: '*'
-          - Effect: Allow
-            Action:
-              - ec2:CreateNetworkInterfacePermission
-            Condition:
-              StringEquals:
-                'ec2:AuthorizedService': !Sub codebuild.${AWS::URLSuffix}
-                'ec2:Subnet':
-                  - !Sub arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:subnet/${PrivateSubnet1}
-                  - !Sub arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:subnet/${PrivateSubnet2}
-            Resource: !Sub arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:network-interface/*
-          - Effect: Allow
-            Action:
-              - s3:GetObject
-              - s3:PutObject
-              - s3:GetObjectVersion
-            Resource: !Sub ${ArtifactBucket.Arn}/*
-          - Effect: Allow
-            Action:
-              - ecr:GetAuthorizationToken
-            Resource:  '*'
-          - Effect: Allow
-            Action:
-              - ecr:GetDownloadUrlForLayer
-              - ecr:BatchGetImage
-              - ecr:BatchCheckLayerAvailability
-              - ecr:PutImage
-              - ecr:InitiateLayerUpload
-              - ecr:UploadLayerPart
-              - ecr:CompleteLayerUpload
-            Resource: !GetAtt ECRRepo.Arn
+      Policies:
+        - PolicyName: Logging
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: '*'
+        - PolicyName: BuildEnvProvisioning
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:CreateNetworkInterface
+                  - ec2:DescribeDhcpOptions
+                  - ec2:DescribeNetworkInterfaces
+                  - ec2:DeleteNetworkInterface
+                  - ec2:DescribeSubnets
+                  - ec2:DescribeSecurityGroups
+                  - ec2:DescribeVpcs
+                Resource: '*'
+              - Effect: Allow
+                Action: ec2:CreateNetworkInterfacePermission
+                Condition:
+                  StringEquals:
+                    'ec2:AuthorizedService': !Sub codebuild.${AWS::URLSuffix}
+                    'ec2:Subnet':
+                      - !Sub arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:subnet/${PrivateSubnet1}
+                      - !Sub arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:subnet/${PrivateSubnet2}
+                Resource: !Sub arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:network-interface/*
+        - PolicyName: ArtifactStaging
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:GetObjectVersion
+                Resource: !Sub ${ArtifactBucket.Arn}/*
+              - Effect: Allow
+                Action: ecr:GetAuthorizationToken
+                Resource:  '*'
+              - Effect: Allow
+                Action:
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:PutImage
+                  - ecr:InitiateLayerUpload
+                  - ecr:UploadLayerPart
+                  - ecr:CompleteLayerUpload
+                Resource: !GetAtt ECRRepo.Arn
 
   # deploy build servers in the private VPC, which works around
   # problems accessing Docker Hub anonymously
   CodeBuildProject:
     Type: AWS::CodeBuild::Project
-    DependsOn:
-      - CodeBuildServiceRole
-      - CodeBuildServiceRolePolicy
+    DependsOn: CodeBuildServiceRole
     Properties:
       ServiceRole: !Ref CodeBuildServiceRole
       VpcConfig:
