@@ -550,7 +550,7 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              Service: !Sub codepipeline.${AWS::URLSuffix}
+              Service: !Sub cloudformation.${AWS::URLSuffix}
             Action: sts:AssumeRole
       # TODO: restrict this role's access to only what's needed
       ManagedPolicyArns:
