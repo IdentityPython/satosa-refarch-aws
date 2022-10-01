@@ -542,7 +542,7 @@ Resources:
             Principal:
               Service: !Sub codepipeline.${AWS::URLSuffix}
             Action: sts:AssumeRole
-  CodePipelineCfnActionRole:
+  CloudFormationActionRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -559,7 +559,7 @@ Resources:
     Type: AWS::IAM::Policy
     DependsOn:
       - CodePipelineServiceRole
-      - CodePipelineCfnActionRole
+      - CloudFormationActionRole
     Properties:
       PolicyName: !Sub ${AWS::StackName}-CodePipelineServiceRolePolicy
       Roles:
@@ -602,12 +602,12 @@ Resources:
               - iam:PassRole
             Resource:
               - !GetAtt CodeBuildServiceRole.Arn
-              - !GetAtt CodePipelineCfnActionRole.Arn
+              - !GetAtt CloudFormationActionRole.Arn
   Pipeline:
     Type: AWS::CodePipeline::Pipeline
     DependsOn:
       - CodePipelineServiceRole
-      - CodePipelineCfnActionRole
+      - CloudFormationActionRole
       - ArtifactBucket
     Properties:
       RoleArn: !GetAtt CodePipelineServiceRole.Arn
@@ -666,7 +666,7 @@ Resources:
                 # preserved in regulated environments
                 ActionMode: CREATE_UPDATE
                 Capabilities: CAPABILITY_NAMED_IAM,CAPABILITY_AUTO_EXPAND
-                RoleArn: !GetAtt CodePipelineCfnActionRole.Arn
+                RoleArn: !GetAtt CloudFormationActionRole.Arn
                 TemplatePath: BuildArtifact::service.yaml
               InputArtifacts:
                 - Name: BuildArtifact
