@@ -507,7 +507,6 @@ Resources:
           - Name: CODE_BUILD_SERVICE_ROLE_ARN # NOTE: the `CODEBUILD_` prefix is reserved for internal use
             Value: !GetAtt CodeBuildServiceRole.Arn
           - Name: ARTIFACT_BUCKET
-            Type: PLAINTEXT
             Value: !Ref ArtifactBucket
           - Name: REPOSITORY_URI
             Value: !GetAtt ECRRepo.RepositoryUri
