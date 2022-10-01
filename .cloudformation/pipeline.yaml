@@ -502,10 +502,6 @@ Resources:
         Type: LINUX_CONTAINER
         PrivilegedMode: true
         EnvironmentVariables:
-          - Name: AWS_DEFAULT_REGION
-            Value: !Ref AWS::Region
-          - Name: CODE_BUILD_SERVICE_ROLE_ARN # NOTE: the `CODEBUILD_` prefix is reserved for internal use
-            Value: !GetAtt CodeBuildServiceRole.Arn
           - Name: ARTIFACT_BUCKET
             Value: !Ref ArtifactBucket
           - Name: REPOSITORY_URI
