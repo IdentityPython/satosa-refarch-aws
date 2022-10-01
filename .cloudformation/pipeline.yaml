@@ -542,37 +542,57 @@ Resources:
             Principal:
               Service: !Sub codepipeline.${AWS::URLSuffix}
             Action: sts:AssumeRole
-      Policies:
-        - PolicyName: Artifacts
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action: s3:*
-                Resource:
-                  - !Sub ${ArtifactBucket.Arn}/*
-                  - !GetAtt ArtifactBucket.Arn
-              - Fn::If:
-                  - UseCodeCommit
-                  - Effect: Allow
-                    Action:
-                      - codecommit:CancelUploadArchive
-                      - codecommit:GetBranch
-                      - codecommit:GetCommit
-                      - codecommit:GetUploadArchiveStatus
-                      - codecommit:UploadArchive
-                    Resource: !Sub arn:${AWS::Partition}:codecommit:${AWS::Region}:${AWS::AccountId}:${GitRepoId}
-                  - Effect: Allow
-                    Action: codestar-connections:UseConnection
-                    Resource: !Ref GitRepoConnector
-              - Effect: Allow
+  CodePipelineServiceRolePolicy:
+    Type: AWS::IAM::Policy
+    DependsOn:
+      - CodePipelineServiceRole
+    Properties:
+      PolicyName: !Sub ${AWS::StackName}-CodePipelineServiceRolePolicy
+      Roles:
+        - !Ref CodePipelineServiceRole
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Fn::If:
+              - UseCodeCommit
+              - Sid: DownloadSourceCodeCommit
+                Effect: Allow
                 Action:
-                  - codebuild:StartBuild
-                  - codebuild:BatchGetBuilds
-                  - iam:PassRole
-                Resource: '*'
+                  - codecommit:CancelUploadArchive
+                  - codecommit:GetBranch
+                  - codecommit:GetCommit
+                  - codecommit:GetUploadArchiveStatus
+                  - codecommit:UploadArchive
+                Resource: !Sub arn:${AWS::Partition}:codecommit:${AWS::Region}:${AWS::AccountId}:${GitRepoId}
+              - Sid: DownloadSourceThirdParty
+                Effect: Allow
+                Action: codestar-connections:UseConnection
+                Resource: !Ref GitRepoConnector
+          - Sid: ManageArtifacts
+            Effect: Allow
+            Action: s3:*
+            Resource:
+              - !Sub ${ArtifactBucket.Arn}/*
+              - !GetAtt ArtifactBucket.Arn
+          - Sid: InvokeCodeBuild
+            Effect: Allow
+            Action:
+              - codebuild:StartBuild
+              - codebuild:BatchGetBuilds
+            Resource: !GetAtt CodeBuildProject.Arn
+          # cf. https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_passrole.html
+          - Sid: PassRolesToActions
+            Effect: Allow
+            Action:
+              # - iam:GetRole
+              - iam:PassRole
+            Resource:
+              - !GetAtt CodeBuildServiceRole.Arn
   Pipeline:
     Type: AWS::CodePipeline::Pipeline
+    DependsOn:
+      - CodePipelineServiceRole
+      - ArtifactBucket
     Properties:
       RoleArn: !GetAtt CodePipelineServiceRole.Arn
       ArtifactStore:
