@@ -9,6 +9,8 @@ Description: >-
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterLabels:
+      EcrPrivateRepoArn:
+        default: ECR Private Repository ARN
       ImageUri:
         default: Container Image URI
       PrivateSubnet1Cidr:
@@ -53,9 +55,16 @@ Metadata:
           default: ECS
         Parameters:
           - ImageUri
+          - EcrPrivateRepoArn
 
 
 Parameters:
+  EcrPrivateRepoArn:
+    Type: String
+    Default: ''
+    Description: >-
+      (Optional) If specified, this stack will give the ECS task execution role read-only access to this ECR private repository.
+      If neither this parameter nor RepositoryCredentialsSecretArn is specified, ECS will download the container image anonymously.
   ImageUri:
     Type: String
     Default: satosa
@@ -122,6 +131,8 @@ Parameters:
 
 
 Conditions:
+  WithEcrPrivateRepo:
+    !Not [ !Equals [ !Ref EcrPrivateRepoArn, '' ] ]
   WithExistingVpc:
     !Equals [ !Ref VpcType, Existing ]
   WithNewVpc:
@@ -470,6 +481,23 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: !GetAtt EcsLogGroup.Arn
+  EcrPrivateRepoPolicy:
+    Type: AWS::IAM::Policy
+    Condition: WithEcrPrivateRepo
+    Properties:
+      PolicyName: !Sub ${AWS::StackName}-EcrPrivateRepoPolicy
+      Roles:
+        - !Ref TaskExecRole
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - ecr:GetAuthorizationToken
+              - ecr:BatchCheckLayerAvailability
+              - ecr:GetDownloadUrlForLayer
+              - ecr:BatchGetImage
+            Resource: !Ref EcrPrivateRepoArn
   BlueTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
