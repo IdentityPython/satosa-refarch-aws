@@ -50,6 +50,56 @@ Metadata:
 
 
 Parameters:
+  PrivateSubnet1Cidr:
+    Type: String
+    Default: 192.168.128.0/18
+    Description: >-
+      When creating a new VPC, the stack will use this subnet of the VPC's IPv4 CIDR block for the first private subnet.
+  PrivateSubnet1Id:
+    Type: String
+    Default: ''
+    Description: >-
+      If using an existing VPC, the stack will use this subnet ID as the first private subnet.
+  PrivateSubnet2Cidr:
+    Type: String
+    Default: 192.168.192.0/18
+    Description: >-
+      When creating a new VPC, the stack will use this subnet of the VPC's IPv4 CIDR block for the second private subnet.
+  PrivateSubnet2Id:
+    Type: String
+    Default: ''
+    Description: >-
+      If using an existing VPC, the stack will use this subnet ID as the second private subnet.
+  PublicSubnet1Cidr:
+    Type: String
+    Default: 192.168.0.0/18
+    Description: >-
+      When creating a new VPC, the stack will use this subnet of the VPC's IPv4 CIDR block for the first public subnet.
+  PublicSubnet1Id:
+    Type: String
+    Default: ''
+    Description: >-
+      If using an existing VPC, the stack will use this subnet ID as the first public subnet.
+  PublicSubnet2Cidr:
+    Type: String
+    Default: 192.168.64.0/18
+    Description: >-
+      When creating a new VPC, the stack will use this subnet of the VPC's IPv4 CIDR block for the second public subnet.
+  PublicSubnet2Id:
+    Type: String
+    Default: ''
+    Description: >-
+      If using an existing VPC, the stack will use this subnet ID as the second public subnet.
+  VpcCidr:
+    Type: String
+    Default: 192.168.0.0/16
+    Description: >-
+      When creating a new VPC, the stack will use this IPv4 CIDR block.
+  VpcId:
+    Type: String
+    Default: ''
+    Description: >-
+      If using an existing VPC, the stack will create resources in the VPC with this identifier.
   VpcType:
     Type: String
     Default: New
@@ -58,56 +108,6 @@ Parameters:
     AllowedValues:
       - New
       - Existing
-  VpcCidr:
-    Type: String
-    Default: 192.168.0.0/16
-    Description: >-
-      When creating a new VPC, the stack will use this IPv4 CIDR block.
-  PublicSubnet1Cidr:
-    Type: String
-    Default: 192.168.0.0/18
-    Description: >-
-      When creating a new VPC, the stack will use this subnet of the VPC's IPv4 CIDR block for the first public subnet.
-  PublicSubnet2Cidr:
-    Type: String
-    Default: 192.168.64.0/18
-    Description: >-
-      When creating a new VPC, the stack will use this subnet of the VPC's IPv4 CIDR block for the second public subnet.
-  PrivateSubnet1Cidr:
-    Type: String
-    Default: 192.168.128.0/18
-    Description: >-
-      When creating a new VPC, the stack will use this subnet of the VPC's IPv4 CIDR block for the first private subnet.
-  PrivateSubnet2Cidr:
-    Type: String
-    Default: 192.168.192.0/18
-    Description: >-
-      When creating a new VPC, the stack will use this subnet of the VPC's IPv4 CIDR block for the second private subnet.
-  VpcId:
-    Type: String
-    Default: ''
-    Description: >-
-      If using an existing VPC, the stack will create resources in the VPC with this identifier.
-  PublicSubnet1Id:
-    Type: String
-    Default: ''
-    Description: >-
-      If using an existing VPC, the stack will use this subnet ID as the first public subnet.
-  PublicSubnet2Id:
-    Type: String
-    Default: ''
-    Description: >-
-      If using an existing VPC, the stack will use this subnet ID as the second public subnet.
-  PrivateSubnet1Id:
-    Type: String
-    Default: ''
-    Description: >-
-      If using an existing VPC, the stack will use this subnet ID as the first private subnet.
-  PrivateSubnet2Id:
-    Type: String
-    Default: ''
-    Description: >-
-      If using an existing VPC, the stack will use this subnet ID as the second private subnet.
   # Vpc:
   #   Type: AWS::EC2::VPC::Id
   # Subnet1:
