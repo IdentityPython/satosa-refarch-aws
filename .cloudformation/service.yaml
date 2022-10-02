@@ -430,7 +430,7 @@ Resources:
       ListenerArn: !Ref AlbListenerHttp
       Priority: 1
 
-  EcsTaskExecutionRole:
+  TaskExecRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -446,7 +446,7 @@ Resources:
   BlueTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
-      ExecutionRoleArn: !GetAtt EcsTaskExecutionRole.Arn
+      ExecutionRoleArn: !GetAtt TaskExecRole.Arn
       ContainerDefinitions:
         - Name: WebApp
           Image: satosa
