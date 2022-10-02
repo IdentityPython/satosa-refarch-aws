@@ -29,6 +29,10 @@ Metadata:
         default: New VPC Public Subnet 2 IPv4 Address
       PublicSubnet2Id:
         default: Existing VPC Public Subnet 2 ID
+      RepositoryCredentialsSecretArn:
+        default: Image Repository Credentials Secret ARN
+      SecretsManagerEncryptionKeyArn:
+        default: Custom KMS Key for Secrets Manager Encryption
       VpcCidr:
         default: New VPC IPv4 CIDR Block
       VpcId:
@@ -56,6 +60,8 @@ Metadata:
         Parameters:
           - ImageUri
           - EcrPrivateRepoArn
+          - RepositoryCredentialsSecretArn
+          - SecretsManagerEncryptionKeyArn
 
 
 Parameters:
@@ -110,6 +116,18 @@ Parameters:
     Default: ''
     Description: >-
       If using an existing VPC, the stack will use this subnet ID as the second public subnet.
+  RepositoryCredentialsSecretArn:
+    Type: String
+    Default: ''
+    Description: >-
+      (Optional) If specified, the ECS task execution role will use container image repository credentials stored in this AWS Secrets Manager secret.
+      For more information, refer to https://docs.aws.amazon.com/AmazonECS/latest/developerguide/private-auth.html.
+      If neither this parameter nor EcrPrivateRepoArn is specified, ECS will download the container image anonymously.
+  SecretsManagerEncryptionKeyArn:
+    Type: String
+    Default: ''
+    Description: >-
+      (Optional) All AWS Secrets Manager secrets will be encrypted/decrypted with this custom KMS key instead of the default.
   VpcCidr:
     Type: String
     Default: 192.168.0.0/16
@@ -137,6 +155,10 @@ Conditions:
     !Equals [ !Ref VpcType, Existing ]
   WithNewVpc:
     !Equals [ !Ref VpcType, New ]
+  WithRepositoryCredentials:
+    !Not [ !Equals [ !Ref RepositoryCredentialsSecretArn, '' ] ]
+  WithSecretsManagerCustomKmsKey:
+    !Not [ !Equals [ !Ref SecretsManagerEncryptionKeyArn, '' ] ]
 
 
 Transform:
@@ -481,6 +503,8 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: !GetAtt EcsLogGroup.Arn
+  # either give the ECS agent read-only access to the ECR private
+  # repository that holds the container image to be deployed,...
   EcrPrivateRepoPolicy:
     Type: AWS::IAM::Policy
     Condition: WithEcrPrivateRepo
@@ -498,12 +522,50 @@ Resources:
               - ecr:GetDownloadUrlForLayer
               - ecr:BatchGetImage
             Resource: !Ref EcrPrivateRepoArn
+  # ...or give the ECS agent read-only access to an AWS Secrets
+  # Manager secret that holds the username/password to the third-party
+  # container image repository that holds the container image to be
+  # deployed
+  RepositoryCredentialsPolicy:
+    Type: AWS::IAM::Policy
+    Condition: WithRepositoryCredentials
+    Properties:
+      PolicyName: !Sub ${AWS::StackName}-RepositoryCredentialsPolicy
+      Roles:
+        - !Ref TaskExecRole
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: secretsmanager:GetSecretValue
+            Resource: !Ref RepositoryCredentialsSecretArn
+  # give the ECS agent permission to decrypt to the repository
+  # credentials with a custom KMS key, if one was used
+  SecretsManagerCustomKmsKeyPolicy:
+    Type: AWS::IAM::Policy
+    Condition: WithSecretsManagerCustomKmsKey
+    Properties:
+      PolicyName: !Sub ${AWS::StackName}-SecretsManagerCustomKmsKeyPolicy
+      Roles:
+        - !Ref TaskExecRole
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: kms:Decrypt
+            Resource: !Ref SecretsManagerEncryptionKeyArn
+
   BlueTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
       ExecutionRoleArn: !GetAtt TaskExecRole.Arn
       ContainerDefinitions:
         - Name: WebApp
+          RepositoryCredentials:
+            Fn::If:
+              - WithRepositoryCredentials
+              - CredentialsParameter: !Ref RepositoryCredentialsSecretArn
+              - !Ref AWS::NoValue
           Image: !Ref ImageUri
           Essential: true
           PortMappings:
