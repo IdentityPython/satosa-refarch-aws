@@ -108,12 +108,6 @@ Parameters:
     AllowedValues:
       - New
       - Existing
-  # Vpc:
-  #   Type: AWS::EC2::VPC::Id
-  # Subnet1:
-  #   Type: AWS::EC2::Subnet::Id
-  # Subnet2:
-  #   Type: AWS::EC2::Subnet::Id
 
 
 Conditions:
