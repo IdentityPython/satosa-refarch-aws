@@ -597,8 +597,10 @@ Resources:
           - Sid: ManageCfnStacks
             Effect: Allow
             Action:
-              - cloudformation:DescribeStacks
               - cloudformation:CreateStack
+              - cloudformation:DeleteStack
+              - cloudformation:DescribeStacks
+              - cloudformation:UpdateStack
             Resource:
               - !Sub arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${StackName}/*
           # cf. https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_passrole.html
