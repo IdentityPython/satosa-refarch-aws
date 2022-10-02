@@ -9,34 +9,34 @@ Description: >-
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterLabels:
-      GitServer:
-        default: Git Repository Hosting Provider
-      GitRepoId:
-        default: Git Repository Identifier
-      GitRepoBranch:
-        default: Git Repository Branch
-      S3ServerSideEncryption:
-        default: S3 Server-side Encryption
-      S3EncryptionKeyArn:
-        default: KMS Master Key ARN for S3 Server-side Encryption
-      SecretsManagerEncryptionKeyId:
-        default: KMS Key ID for Secrets Manager Encryption
-      StackName:
-        default: Service Stack Name
-      Hostname:
-        default: Hostname
-      DomainName:
-        default: Domain Name
-      HostedZoneId:
-        default: Route 53 Hosted Zone ID
-      CertificateArn:
-        default: ACM Certificate ARN
       CertDcvMethod:
         default: Certificate Domain Control Validation Method
+      CertificateArn:
+        default: ACM Certificate ARN
       CertificateAuthorityArn:
         default: Private Certificate Authority ARN
       CtLoggingPref:
         default: Certificate Transparency Logging
+      DomainName:
+        default: Domain Name
+      GitRepoBranch:
+        default: Git Repository Branch
+      GitRepoId:
+        default: Git Repository Identifier
+      GitServer:
+        default: Git Repository Hosting Provider
+      HostedZoneId:
+        default: Route 53 Hosted Zone ID
+      Hostname:
+        default: Hostname
+      S3EncryptionKeyArn:
+        default: KMS Master Key ARN for S3 Server-side Encryption
+      S3ServerSideEncryption:
+        default: S3 Server-side Encryption
+      SecretsManagerEncryptionKeyId:
+        default: KMS Key ID for Secrets Manager Encryption
+      StackName:
+        default: Service Stack Name
 
     ParameterGroups:
       - Label:
