@@ -430,6 +430,14 @@ Resources:
       ListenerArn: !Ref AlbListenerHttp
       Priority: 1
 
+  # configure logging
+  EcsLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /${AWS::StackName}/ecs
+
+  # controls what the ECS agent can do,
+  # cf. https://blog.ruanbekker.com/blog/2021/07/31/difference-with-ecs-task-and-execution-iam-roles-on-aws/
   TaskExecRole:
     Type: AWS::IAM::Role
     Properties:
@@ -441,8 +449,16 @@ Resources:
             Principal:
               Service: !Sub ecs-tasks.${AWS::URLSuffix}
             Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: Logging
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !GetAtt EcsLogGroup.Arn
   BlueTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
