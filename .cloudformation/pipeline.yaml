@@ -62,6 +62,51 @@ Metadata:
 
 
 Parameters:
+  CertDcvMethod:
+    Type: String
+    Default: DNS
+    Description: >-
+      (Optional) When requesting a new service certificate, use DNS record- or confirmation email-based domain control validation (DCV).
+      If using DNS DCV (the default) and if HostedZoneId is set, the CI/CD stack will handle this automatically.
+      Otherwise, validation will require manual action by one of the domain's contacts.
+      For more information, refer to https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-validate-dns.html (DNS) or https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-validate-email.html (EMAIL).
+    AllowedValues:
+      - DNS
+      - EMAIL
+  CertificateArn:
+    Type: String
+    Default: ''
+    Description: >-
+      (Optional) The service stack will use this certificate in AWS Certificate Manager (ACM).
+      If left blank, the CI/CD stack will request a new ACM certificate on behalf of the service stack.
+  CertificateAuthorityArn:
+    Type: String
+    Default: ''
+    Description: >-
+      (Optional) When requesting a new service certificate, issue it using the specified private ACM certificate authority (CA).
+      Otherwise, the CI/CD stack will use the default public CA.
+  CtLoggingPref:
+    Type: String
+    Default: ENABLED
+    Description: >-
+      (Optional) When requesting a new service certificate, opt out of Certificate Transparency logging by setting this to DISABLED.
+    AllowedValues:
+      - ENABLED
+      - DISABLED
+  DomainName:
+    Type: String
+    Description: >-
+      The domain name of the service, e.g., for "aai.example.com", the domain name would be "example.com".
+  GitRepoBranch:
+    Type: String
+    Default: main
+    Description: >-
+      The continuous delivery pipeline will watch for changes in this branch of the above repository, e.g., `main`, `production`.
+  GitRepoId:
+    Type: String
+    Description: >-
+      The continuous delivery pipeline will watch for source changes in this Git repository, e.g., `example/repo` (GitHub), `example-repo` (CodeCommit).
+      Note that CodeCommit repositories MUST exist in the same partition/region/account as this stack.
   GitServer:
     Type: String
     Default: GitHub
@@ -72,16 +117,16 @@ Parameters:
       - CodeCommit
       - GitHub
       - GitHubEnterpriseServer
-  GitRepoId:
+  HostedZoneId:
+    Type: String
+    Default: ''
+    Description: >-
+      (Optional) If specified, the continuous delivery pipeline and service stack will create resource records for SATOSA in this Route 53 hosted zone.
+      Note that the Route 53 hosted zone MUST exist in the same partition/account as this stack.
+  Hostname:
     Type: String
     Description: >-
-      The continuous delivery pipeline will watch for source changes in this Git repository, e.g., `example/repo` (GitHub), `example-repo` (CodeCommit).
-      Note that CodeCommit repositories MUST exist in the same partition/region/account as this stack.
-  GitRepoBranch:
-    Type: String
-    Default: main
-    Description: >-
-      The continuous delivery pipeline will watch for changes in this branch of the above repository, e.g., `main`, `production`.
+      The short name of the service, e.g., for "aai.example.com", the hostname would be "aai".
   S3ServerSideEncryption:
     Type: String
     Default: SSE-S3
@@ -105,51 +150,6 @@ Parameters:
     Type: String
     Description: >-
       The continuous delivery pipeline will give this name to the CloudFormation stack that deploys SATOSA.
-  Hostname:
-    Type: String
-    Description: >-
-      The short name of the service, e.g., for "aai.example.com", the hostname would be "aai".
-  DomainName:
-    Type: String
-    Description: >-
-      The domain name of the service, e.g., for "aai.example.com", the domain name would be "example.com".
-  HostedZoneId:
-    Type: String
-    Default: ''
-    Description: >-
-      (Optional) If specified, the continuous delivery pipeline and service stack will create resource records for SATOSA in this Route 53 hosted zone.
-      Note that the Route 53 hosted zone MUST exist in the same partition/account as this stack.
-  CertificateArn:
-    Type: String
-    Default: ''
-    Description: >-
-      (Optional) The service stack will use this certificate in AWS Certificate Manager (ACM).
-      If left blank, the CI/CD stack will request a new ACM certificate on behalf of the service stack.
-  CertDcvMethod:
-    Type: String
-    Default: DNS
-    Description: >-
-      (Optional) When requesting a new service certificate, use DNS record- or confirmation email-based domain control validation (DCV).
-      If using DNS DCV (the default) and if HostedZoneId is set, the CI/CD stack will handle this automatically.
-      Otherwise, validation will require manual action by one of the domain's contacts.
-      For more information, refer to https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-validate-dns.html (DNS) or https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-validate-email.html (EMAIL).
-    AllowedValues:
-      - DNS
-      - EMAIL
-  CertificateAuthorityArn:
-    Type: String
-    Default: ''
-    Description: >-
-      (Optional) When requesting a new service certificate, issue it using the specified private ACM certificate authority (CA).
-      Otherwise, the CI/CD stack will use the default public CA.
-  CtLoggingPref:
-    Type: String
-    Default: ENABLED
-    Description: >-
-      (Optional) When requesting a new service certificate, opt out of Certificate Transparency logging by setting this to DISABLED.
-    AllowedValues:
-      - ENABLED
-      - DISABLED
 
 
 Conditions:
