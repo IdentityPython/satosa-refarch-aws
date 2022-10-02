@@ -9,6 +9,8 @@ Description: >-
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterLabels:
+      ImageUri:
+        default: Container Image URI
       PrivateSubnet1Cidr:
         default: New VPC Private Subnet 1 IPv4 Address
       PrivateSubnet1Id:
@@ -47,9 +49,18 @@ Metadata:
           - PublicSubnet2Id
           - PrivateSubnet1Id
           - PrivateSubnet2Id
+      - Label:
+          default: ECS
+        Parameters:
+          - ImageUri
 
 
 Parameters:
+  ImageUri:
+    Type: String
+    Default: satosa
+    Description: >-
+      The stack will deploy this Docker container image:tag.
   PrivateSubnet1Cidr:
     Type: String
     Default: 192.168.128.0/18
@@ -465,7 +476,7 @@ Resources:
       ExecutionRoleArn: !GetAtt TaskExecRole.Arn
       ContainerDefinitions:
         - Name: WebApp
-          Image: satosa
+          Image: !Ref ImageUri
           Essential: true
           PortMappings:
             - HostPort: 8080
