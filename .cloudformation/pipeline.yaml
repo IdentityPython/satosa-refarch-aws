@@ -153,30 +153,6 @@ Parameters:
 
 
 Conditions:
-  UseCodeCommit:
-    !Equals [ !Ref GitServer, CodeCommit ]
-  UseCodeStarConnections:
-    !Not [ !Equals [ !Ref GitServer, CodeCommit ] ]
-  UseDefaultS3Encryption:
-    !Equals [ !Ref S3ServerSideEncryption, SSE-S3 ]
-  UseDefaultS3EncryptionKey:
-    !Equals [ !Ref S3EncryptionKeyArn, '' ]
-  UseDefaultSecretsManagerKey:
-    !Equals [ !Ref SecretsManagerEncryptionKeyId, '' ]
-  RequestCertificate:
-    !Equals [ !Ref CertificateArn, '' ]
-  UseManualDnsDcv:
-    Fn::And:
-      - Fn::Equals:
-          - !Ref CertificateArn
-          - ''
-      - Fn::And:
-          - Fn::Equals:
-              - !Ref CertDcvMethod
-              - DNS
-          - Fn::Equals:
-              - !Ref HostedZoneId
-              - ''
   FinishManualDcv:
     Fn::And:
       - Fn::Equals:
@@ -193,7 +169,31 @@ Conditions:
             - Fn::Equals:
                 - !Ref HostedZoneId
                 - ''
-  UsePublicCertificateAuthority:
+  RequestCertificate:
+    !Equals [ !Ref CertificateArn, '' ]
+  WithCodeCommit:
+    !Equals [ !Ref GitServer, CodeCommit ]
+  WithCodeStarConnections:
+    !Not [ !Equals [ !Ref GitServer, CodeCommit ] ]
+  WithDefaultS3Encryption:
+    !Equals [ !Ref S3ServerSideEncryption, SSE-S3 ]
+  WithDefaultS3EncryptionKey:
+    !Equals [ !Ref S3EncryptionKeyArn, '' ]
+  WithDefaultSecretsManagerKey:
+    !Equals [ !Ref SecretsManagerEncryptionKeyId, '' ]
+  WithManualDnsDcv:
+    Fn::And:
+      - Fn::Equals:
+          - !Ref CertificateArn
+          - ''
+      - Fn::And:
+          - Fn::Equals:
+              - !Ref CertDcvMethod
+              - DNS
+          - Fn::Equals:
+              - !Ref HostedZoneId
+              - ''
+  WithPublicCertificateAuthority:
     !Equals [ !Ref CertificateAuthorityArn, '' ]
 
 Resources:
@@ -356,15 +356,15 @@ Resources:
             ServerSideEncryptionByDefault:
               SSEAlgorithm:
                 Fn::If:
-                  - UseDefaultS3Encryption
+                  - WithDefaultS3Encryption
                   - AES256
                   - aws:kms
               KMSMasterKeyID:
                 Fn::If:
-                  - UseDefaultS3Encryption
+                  - WithDefaultS3Encryption
                   - !Ref AWS::NoValue
                   - Fn::If:
-                      - UseDefaultS3EncryptionKey
+                      - WithDefaultS3EncryptionKey
                       - !Sub arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/s3
                       - !Ref S3EncryptionKeyArn
 
@@ -376,15 +376,15 @@ Resources:
       EncryptionConfiguration:  # same as S3 since that's its back end
         EncryptionType:
           Fn::If:
-            - UseDefaultS3Encryption
+            - WithDefaultS3Encryption
             - AES256
             - KMS
         KmsKey:
           Fn::If:
-            - UseDefaultS3Encryption
+            - WithDefaultS3Encryption
             - !Ref AWS::NoValue
             - Fn::If:
-                - UseDefaultS3EncryptionKey
+                - WithDefaultS3EncryptionKey
                 - !Sub arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/s3
                 - !Ref S3EncryptionKeyArn
       ImageScanningConfiguration:
@@ -397,14 +397,14 @@ Resources:
     Type: AWS::SecretsManager::Secret
     Properties:
       SecretString: 030373bb-ddf8-44d6-8213-7c9ff2339316
-      KmsKeyId: !If [ UseDefaultSecretsManagerKey, !Ref AWS::NoValue, !Ref SecretsManagerEncryptionKeyId ]
+      KmsKeyId: !If [ WithDefaultSecretsManagerKey, !Ref AWS::NoValue, !Ref SecretsManagerEncryptionKeyId ]
       Description: >-
         SATOSA's identity provider front end will use this key-pair for SAML 2.0 response signing.
   Saml2BackEndKeyPairSecret:
     Type: AWS::SecretsManager::Secret
     Properties:
       SecretString: 030373bb-ddf8-44d6-8213-7c9ff2339316
-      KmsKeyId: !If [ UseDefaultSecretsManagerKey, !Ref AWS::NoValue, !Ref SecretsManagerEncryptionKeyId ]
+      KmsKeyId: !If [ WithDefaultSecretsManagerKey, !Ref AWS::NoValue, !Ref SecretsManagerEncryptionKeyId ]
       Description: >-
         SATOSA's service provier back end will use this key-pair for SAML 2.0 request signing and response decryption.
 
@@ -510,7 +510,7 @@ Resources:
   # optionally connect to a third-party Git repo host
   GitRepoConnector:
     Type: AWS::CodeStarConnections::Connection
-    Condition: UseCodeStarConnections
+    Condition: WithCodeStarConnections
     Properties:
       ConnectionName: !Ref AWS::StackName
       ProviderType: !Ref GitServer
@@ -524,12 +524,12 @@ Resources:
       ValidationMethod: !Ref CertDcvMethod
       DomainValidationOptions:
         Fn::If:
-          - UseManualDnsDcv
+          - WithManualDnsDcv
           - !Ref AWS::NoValue
           -
             - DomainName: !Sub ${Hostname}.${DomainName}
               HostedZoneId: !Ref HostedZoneId
-      CertificateAuthortityArn: !If [ UsePublicCertificateAuthority, !Ref AWS::NoValue, !Ref CertificateAuthorityArn ]
+      CertificateAuthortityArn: !If [ WithPublicCertificateAuthority, !Ref AWS::NoValue, !Ref CertificateAuthorityArn ]
       CertificateTransparencyLoggingPreference: !Ref CtLoggingPref
 
   CodePipelineServiceRole:
@@ -568,7 +568,7 @@ Resources:
         Version: 2012-10-17
         Statement:
           - Fn::If:
-              - UseCodeCommit
+              - WithCodeCommit
               - Sid: DownloadSourceCodeCommit
                 Effect: Allow
                 Action:
@@ -631,11 +631,11 @@ Resources:
               ActionTypeId:
                 Category: Source
                 Owner: AWS
-                Provider: !If [ UseCodeCommit, CodeCommit, CodeStarSourceConnection ]
+                Provider: !If [ WithCodeCommit, CodeCommit, CodeStarSourceConnection ]
                 Version: 1
               Configuration:
                 Fn::If:
-                  - UseCodeCommit
+                  - WithCodeCommit
                   - RepositoryName: !Ref GitRepoId
                     BranchName: !Ref GitRepoBranch
                     PollForSourceChanges: false
@@ -717,7 +717,7 @@ Resources:
   # https://github.com/awslabs/serverless-codecommit-examples
   CodeCommitRepoConnectorRole:
     Type: AWS::IAM::Role
-    Condition: UseCodeCommit
+    Condition: WithCodeCommit
     Properties:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
@@ -736,7 +736,7 @@ Resources:
                 Resource: !Sub arn:${AWS::Partition}:codepipeline:${AWS::Region}:${AWS::AccountId}:${Pipeline}
   CodeCommitRepoConnectorEventRule:
     Type: AWS::Events::Rule
-    Condition: UseCodeCommit
+    Condition: WithCodeCommit
     Properties:
       EventPattern:
         source:
@@ -775,7 +775,7 @@ Outputs:                        # sorted alphabetically by output key name in th
       For more information, refer to https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-validate-dns.html (DNS) or https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-validate-email.html (EMAIL).
 
   CodeStarConnectionsUrl:
-    Condition: UseCodeStarConnections
+    Condition: WithCodeStarConnections
     Value: !Sub https://console.aws.amazon.com/codesuite/settings/connections?region=${AWS::Region}
     Description: >-
       This stack was connected to a third-party Git repository hosting service.
