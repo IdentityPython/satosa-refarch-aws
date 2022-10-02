@@ -111,10 +111,10 @@ Parameters:
 
 
 Conditions:
-  WithNewVpc:
-    !Equals [ !Ref VpcType, New ]
   WithExistingVpc:
     !Equals [ !Ref VpcType, Existing ]
+  WithNewVpc:
+    !Equals [ !Ref VpcType, New ]
 
 
 Transform:
