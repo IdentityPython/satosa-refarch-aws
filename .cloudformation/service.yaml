@@ -9,28 +9,28 @@ Description: >-
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterLabels:
-      VpcType:
-        default: New or Existing VPC
-      VpcCidr:
-        default: New VPC IPv4 CIDR Block
-      PublicSubnet1Cidr:
-        default: New VPC Public Subnet 1 IPv4 Address
-      PublicSubnet2Cidr:
-        default: New VPC Public Subnet 2 IPv4 Address
       PrivateSubnet1Cidr:
         default: New VPC Private Subnet 1 IPv4 Address
-      PrivateSubnet2Cidr:
-        default: New VPC Private Subnet 2 IPv4 Address
-      VpcId:
-        default: Existing VPC ID
-      PublicSubnet1Id:
-        default: Existing VPC Public Subnet 1 ID
-      PublicSubnet2Id:
-        default: Existing VPC Public Subnet 2 ID
       PrivateSubnet1Id:
         default: Existing VPC Private Subnet 1 ID
+      PrivateSubnet2Cidr:
+        default: New VPC Private Subnet 2 IPv4 Address
       PrivateSubnet2Id:
         default: Existing VPC Private Subnet 2 ID
+      PublicSubnet1Cidr:
+        default: New VPC Public Subnet 1 IPv4 Address
+      PublicSubnet1Id:
+        default: Existing VPC Public Subnet 1 ID
+      PublicSubnet2Cidr:
+        default: New VPC Public Subnet 2 IPv4 Address
+      PublicSubnet2Id:
+        default: Existing VPC Public Subnet 2 ID
+      VpcCidr:
+        default: New VPC IPv4 CIDR Block
+      VpcId:
+        default: Existing VPC ID
+      VpcType:
+        default: New or Existing VPC
       
     ParameterGroups:
       - Label:
