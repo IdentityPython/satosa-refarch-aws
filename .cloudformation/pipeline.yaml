@@ -502,8 +502,8 @@ Resources:
         Type: LINUX_CONTAINER
         PrivilegedMode: true
         EnvironmentVariables:
-          - Name: ARTIFACT_BUCKET
-            Value: !Ref ArtifactBucket
+          - Name: REPOSITORY_ARN
+            Value: !GetAtt ECRRepo.Arn
           - Name: REPOSITORY_URI
             Value: !GetAtt ECRRepo.RepositoryUri
 
