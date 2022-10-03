@@ -15,9 +15,9 @@ phases:
   post_build:
     commands:
       - docker push "$IMAGE_URI"
-      - jq -n -f .awscodepipeline/config.json.template --arg EcrPrivateRepoArn "$REPOSITORY_ARN" --arg ImageUri "$IMAGE_URI" > config.json
+      - jq -n -f .awscodepipeline/config.json.template --arg EcrPrivateRepoArn "$REPOSITORY_ARN" --arg ImageUri "$IMAGE_URI" > .awscodepipeline/config.json
 artifacts:
   discard-paths: yes
   files:
     - .cloudformation/service.yaml
-    - config.json
+    - .awscodepipeline/config.json
