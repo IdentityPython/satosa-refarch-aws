@@ -15,9 +15,15 @@ phases:
   post_build:
     commands:
       - docker push "$IMAGE_URI"
-      - printf '[{"name":"satosa","imageUri":"%s"}]' "$IMAGE_URI" > images.json
+      - jq -n '
+        {
+          Parameters: {
+            EcrPrivateRepoArn: $ENV.REPOSITORY_ARN,
+            ImageUri: $ENV.IMAGE_URI
+          }
+        }' > config.json
 artifacts:
   discard-paths: yes
   files:
     - .cloudformation/service.yaml
-    - images.json
+    - config.json
