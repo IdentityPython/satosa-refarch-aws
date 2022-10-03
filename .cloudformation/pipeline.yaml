@@ -677,6 +677,7 @@ Resources:
                 Capabilities: CAPABILITY_NAMED_IAM,CAPABILITY_AUTO_EXPAND
                 RoleArn: !GetAtt CloudFormationActionRole.Arn
                 TemplatePath: BuildArtifact::service.yaml
+                TemplateConfiguration: BuildArtifact::config.json
               InputArtifacts:
                 - Name: BuildArtifact
               RunOrder: 3
