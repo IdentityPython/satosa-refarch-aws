@@ -15,7 +15,8 @@ phases:
   post_build:
     commands:
       - docker push "$IMAGE_URI"
-      - jq -n '
+      - |-
+        jq -n '
         {
           Parameters: {
             EcrPrivateRepoArn: $ENV.REPOSITORY_ARN,
