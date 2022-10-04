@@ -2,8 +2,8 @@
 version: 0.2
 phases:
   install:
-    runtime-versions:
-      nodejs: 12
+    commands:
+      - curl --location https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 > /usr/local/bin/jq && chmod 0755 /usr/local/bin/jq
   pre_build:
     commands:
       - $(aws ecr get-login --no-include-email)

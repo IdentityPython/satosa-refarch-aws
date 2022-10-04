@@ -502,10 +502,11 @@ Resources:
         Type: LINUX_CONTAINER
         PrivilegedMode: true
         EnvironmentVariables:
-          - Name: REPOSITORY_ARN
-            Value: !GetAtt ECRRepo.Arn
+          # buildspec variables
           - Name: REPOSITORY_URI
             Value: !GetAtt ECRRepo.RepositoryUri
+          # template config variables
+          - Name: EcrPrivateRepoArn
 
   # optionally connect to a third-party Git repo host
   GitRepoConnector:
