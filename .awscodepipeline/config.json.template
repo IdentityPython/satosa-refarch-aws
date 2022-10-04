@@ -1,6 +1,17 @@
 {
     Parameters: {
         EcrPrivateRepoArn: $ENV.EcrPrivateRepoArn,
-        ImageUri: $ENV.IMAGE_URI
+        ImageUri: $ENV.IMAGE_URI,
+        PrivateSubnet1Cidr: $ENV.PrivateSubnet1Cidr,
+        PrivateSubnet1Id: $ENV.PrivateSubnet1Id,
+        PrivateSubnet2Cidr: $ENV.PrivateSubnet2Cidr,
+        PrivateSubnet2Id: $ENV.PrivateSubnet2Id,
+        PublicSubnet1Cidr: $ENV.PublicSubnet1Cidr,
+        PublicSubnet1Id: $ENV.PublicSubnet1Id,
+        PublicSubnet2Cidr: $ENV.PublicSubnet2Cidr,
+        PublicSubnet2Id: $ENV.PublicSubnet2Id,
+        VpcCidr: $ENV.VpcCidr,
+        VpcId: $ENV.VpcId,
+        VpcType: $ENV.VpcType
     }
 }
