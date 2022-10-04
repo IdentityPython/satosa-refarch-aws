@@ -1,6 +1,6 @@
 {
     Parameters: {
-        EcrPrivateRepoArn: $EcrPrivateRepoArn,
-        ImageUri: $ImageUri
+        EcrPrivateRepoArn: $ENV.EcrPrivateRepoArn,
+        ImageUri: $ENV.IMAGE_URI
     }
 }
