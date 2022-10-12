@@ -15,7 +15,7 @@ phases:
   post_build:
     commands:
       - docker push "$IMAGE_URI"
-      - jq -n -f .awscodepipeline/config.json.template > .awscodepipeline/config.json
+      - jq -c -S -n -f .awscodepipeline/config.json.template > .awscodepipeline/config.json
 artifacts:
   discard-paths: yes
   files:
