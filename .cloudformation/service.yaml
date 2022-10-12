@@ -357,6 +357,40 @@ Resources:
     Properties:
       RouteTableId: !Ref PrivateRouteTable2
       SubnetId: !Ref PrivateSubnet2
+  NewVpcWaitHandle:
+    Type: AWS::CloudFormation::WaitConditionHandle
+    Condition: WithNewVpc
+    DependsOn:
+      - VPC
+      - InternetGateway
+      - InternetGatewayAttachment
+      - PublicSubnet1
+      - PublicSubnet2
+      - PrivateSubnet1
+      - PrivateSubnet2
+      - NatGateway1EIP
+      - NatGateway2EIP
+      - NatGateway1
+      - NatGateway2
+      - PublicRouteTable
+      - DefaultPublicRoute
+      - PublicSubnet1RouteTableAssociation
+      - PublicSubnet2RouteTableAssociation
+      - PrivateRouteTable1
+      - DefaultPrivateRoute1
+      - PrivateSubnet1RouteTableAssociation
+      - PrivateRouteTable2
+      - DefaultPrivateRoute2
+      - PrivateSubnet2RouteTableAssociation
+  ExistingVpcWaitHandle:        # no op
+    Type: AWS::CloudFormation::WaitConditionHandle
+    Condition: WithExistingVpc
+  WaitForVpcDeployment:
+    Type: AWS::CloudFormation::WaitCondition
+    Properties:
+      Handle: !If [ WithNewVpc, !Ref NewVpcWaitHandle, !Ref ExistingVpcWaitHandle ]
+      Timeout: 1
+      Count: 0
 
   # put the service behind an application load balancer
   AlbSecurityGroup:
@@ -432,6 +466,7 @@ Resources:
       VpcId: !If [ WithNewVpc, !Ref VPC, !Ref VpcId ]
   LoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    DependsOn: WaitForVpcDeployment
     Properties:
       Scheme: internet-facing
       SecurityGroups:
