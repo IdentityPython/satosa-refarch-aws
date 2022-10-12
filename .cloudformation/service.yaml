@@ -410,22 +410,15 @@ Resources:
           ToPort: 443
   EcsSecurityGroup:
     Type: AWS::EC2::SecurityGroup
+    DependsOn: AlbSecurityGroup
     Properties:
-      GroupDescription: Security group for ec2 access
+      GroupDescription: !Sub ${AWS::StackName}-ecs
       VpcId: !If [ WithNewVpc, !Ref VPC, !Ref VpcId ]
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
           FromPort: 8080
           ToPort: 8080
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: 0.0.0.0/0
+          SourceSecurityGroupId: !Ref AlbSecurityGroup
   BlueAlbTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
