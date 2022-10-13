@@ -1,7 +1,13 @@
 {
     Parameters: {
+        ClusterDesiredSize: $ENV.ClusterDesiredSize,
+        ClusterMaxSize: $ENV.ClusterMaxSize,
+        ClusterMinSize: $ENV.ClusterMinSize,
         EcrPrivateRepoArn: $ENV.EcrPrivateRepoArn,
+        EcsImageId: $ENV.EcsImageId,
         ImageUri: $ENV.IMAGE_URI,
+        InstanceType: $ENV.InstanceType,
+        LaunchType: $ENV.LaunchType,
         PrivateSubnet1Cidr: $ENV.PrivateSubnet1Cidr,
         PrivateSubnet1Id: $ENV.PrivateSubnet1Id,
         PrivateSubnet2Cidr: $ENV.PrivateSubnet2Cidr,
