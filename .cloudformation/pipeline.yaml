@@ -15,10 +15,18 @@ Metadata:
         default: ACM Certificate ARN
       CertificateAuthorityArn:
         default: Private Certificate Authority ARN
+      ClusterDesiredSize:
+        default: ECS Cluster - Desired Size
+      ClusterMaxSize:
+        default: ECS Cluster - Maximum Size
+      ClusterMinSize:
+        default: ECS Cluster - Minimum Size
       CtLoggingPref:
         default: Certificate Transparency Logging
       DomainName:
         default: Domain Name
+      EcsImageId:
+        default: ECS Image ID
       GitRepoBranch:
         default: Git Repository Branch
       GitRepoId:
@@ -29,6 +37,10 @@ Metadata:
         default: Route 53 Hosted Zone ID
       Hostname:
         default: Hostname
+      InstanceType:
+        default: EC2 Instance Type
+      LaunchType:
+        default: ECS Launch Type
       PrivateSubnet1Cidr:
         default: New VPC Private Subnet 1 IPv4 Address
       PrivateSubnet1Id:
@@ -95,6 +107,15 @@ Metadata:
           - PublicSubnet2Id
           - PrivateSubnet1Id
           - PrivateSubnet2Id
+      - Label:
+          default: Service Hosting
+        Parameters:
+          - LaunchType
+          - EcsImageId
+          - InstanceType
+          - ClusterMinSize
+          - ClusterMaxSize
+          - ClusterDesiredSize
 
 
 Parameters:
@@ -121,6 +142,22 @@ Parameters:
     Description: >-
       (Optional) When requesting a new service certificate, issue it using the specified private ACM certificate authority (CA).
       Otherwise, the CI/CD stack will use the default public CA.
+  ClusterDesiredSize:
+    Type: Number
+    Default: 2
+    Description: >-
+      When deploying ECS clusters on EC2, the stack will configure the Auto Scaling group to keep at least this many ECS container instances running at all times.
+      It must greater than or equal to the cluster's minimum size and less than or equal to the cluster's maximum size.
+  ClusterMaxSize:
+    Type: Number
+    Default: 2
+    Description: >-
+      When deploying ECS clusters on EC2, the stack will create the Auto Scaling group with no more than this many ECS container instances.
+  ClusterMinSize:
+    Type: Number
+    Default: 2
+    Description: >-
+      When deploying ECS clusters on EC2, the stack will create the Auto Scaling group with at least this many ECS container instances.
   CtLoggingPref:
     Type: String
     Default: ENABLED
@@ -133,6 +170,11 @@ Parameters:
     Type: String
     Description: >-
       The domain name of the service, e.g., for "aai.example.com", the domain name would be "example.com".
+  EcsImageId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Image::Id>
+    Default: /aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id
+    Description: >-
+      When deploying ECS clusters on EC2, the stack will create the Auto Scaling group with ECS container instances based on this Amazon Machine Image (AMI).
   GitRepoBranch:
     Type: String
     Default: main
@@ -163,6 +205,21 @@ Parameters:
     Type: String
     Description: >-
       The short name of the service, e.g., for "aai.example.com", the hostname would be "aai".
+  InstanceType:
+    Type: String
+    Default: t3a.medium
+    Description: >-
+      When deploying ECS clusters on EC2, the stack will create the Auto Scaling group with ECS container instances based on this EC2 instance type.
+  LaunchType:
+    Type: String
+    Default: FARGATE
+    Description: >-
+      The stack will deploy ECS-managed containers using Fargate or EC2.
+      Selecting EC2 will create an Auto Scaling group of t3a.micro instances for the cluster.
+      For more information on launch types, refer to https://docs.aws.amazon.com/AmazonECS/latest/developerguide/launch_types.html.
+    AllowedValues:
+      - EC2
+      - FARGATE
   PrivateSubnet1Cidr:
     Type: String
     Default: 192.168.128.0/18
@@ -600,8 +657,20 @@ Resources:
           - Name: REPOSITORY_URI
             Value: !GetAtt ECRRepo.RepositoryUri
           # template config variables
+          - Name: ClusterDesiredSize
+            Value: !Ref ClusterDesiredSize
+          - Name: ClusterMaxSize
+            Value: !Ref ClusterMaxSize
+          - Name: ClusterMinSize
+            Value: !Ref ClusterMinSize
           - Name: EcrPrivateRepoArn
             Value: !GetAtt ECRRepo.Arn
+          - Name: EcsImageId
+            Value: !Ref EcsImageId
+          - Name: InstanceType
+            Value: !Ref InstanceType
+          - Name: LaunchType
+            Value: !Ref LaunchType
           - Name: PrivateSubnet1Cidr
             Value: !Ref PrivateSubnet1Cidr
           - Name: PrivateSubnet1Id
