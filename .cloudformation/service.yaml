@@ -583,7 +583,7 @@ Resources:
     Properties:
       ExecutionRoleArn: !GetAtt TaskExecRole.Arn
       ContainerDefinitions:
-        - Name: WebApp
+        - Name: SATOSA
           RepositoryCredentials:
             Fn::If:
               - WithRepositoryCredentials
@@ -630,7 +630,7 @@ Resources:
       Service: !Ref EcsService
       TaskDefinition: !Ref BlueTaskDefinition
       LoadBalancers:
-        - ContainerName: WebApp
+        - ContainerName: SATOSA
           ContainerPort: 8080
           TargetGroupArn: !Ref BlueAlbTargetGroup
   PrimaryTaskSet:
