@@ -106,8 +106,8 @@ Parameters:
       (Optional) If specified, this stack will give the ECS task execution role read-only access to this ECR private repository.
       If neither this parameter nor RepositoryCredentialsSecretArn is specified, ECS will download the container image anonymously.
   EcsImageId:
-    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Image::Id>
-    Default: /aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id
+    Type: String
+    Default: ''
     Description: >-
       When deploying ECS clusters on EC2, the stack will create the Auto Scaling group with ECS container instances based on this Amazon Machine Image (AMI).
   ImageUri:
