@@ -54,7 +54,7 @@ Metadata:
       
     ParameterGroups:
       - Label:
-          default: Networking
+          default: Service Networking
         Parameters:
           - VpcType
           - VpcCidr
@@ -68,11 +68,11 @@ Metadata:
           - PrivateSubnet1Id
           - PrivateSubnet2Id
       - Label:
-          default: ECS
+          default: Service Hosting
         Parameters:
           - LaunchType
-          - InstanceType
           - EcsImageId
+          - InstanceType
           - ClusterMinSize
           - ClusterMaxSize
           - ClusterDesiredSize
