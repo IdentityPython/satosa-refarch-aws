@@ -9,10 +9,22 @@ Description: >-
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterLabels:
+      ClusterDesiredSize:
+        default: ECS Cluster - Desired Size
+      ClusterMaxSize:
+        default: ECS Cluster - Maximum Size
+      ClusterMinSize:
+        default: ECS Cluster - Minimum Size
       EcrPrivateRepoArn:
         default: ECR Private Repository ARN
+      EcsImageId:
+        default: ECS Image ID
       ImageUri:
         default: Container Image URI
+      InstanceType:
+        default: EC2 Instance Type
+      LaunchType:
+        default: ECS Launch Type
       PrivateSubnet1Cidr:
         default: New VPC Private Subnet 1 IPv4 Address
       PrivateSubnet1Id:
@@ -58,6 +70,12 @@ Metadata:
       - Label:
           default: ECS
         Parameters:
+          - LaunchType
+          - InstanceType
+          - EcsImageId
+          - ClusterMinSize
+          - ClusterMaxSize
+          - ClusterDesiredSize
           - ImageUri
           - EcrPrivateRepoArn
           - RepositoryCredentialsSecretArn
@@ -65,17 +83,53 @@ Metadata:
 
 
 Parameters:
+  ClusterDesiredSize:
+    Type: Number
+    Default: 2
+    Description: >-
+      When deploying ECS clusters on EC2, the stack will configure the Auto Scaling group to keep at least this many ECS container instances running at all times.
+      It must greater than or equal to the cluster's minimum size and less than or equal to the cluster's maximum size.
+  ClusterMaxSize:
+    Type: Number
+    Default: 2
+    Description: >-
+      When deploying ECS clusters on EC2, the stack will create the Auto Scaling group with no more than this many ECS container instances.
+  ClusterMinSize:
+    Type: Number
+    Default: 2
+    Description: >-
+      When deploying ECS clusters on EC2, the stack will create the Auto Scaling group with at least this many ECS container instances.
   EcrPrivateRepoArn:
     Type: String
     Default: ''
     Description: >-
       (Optional) If specified, this stack will give the ECS task execution role read-only access to this ECR private repository.
       If neither this parameter nor RepositoryCredentialsSecretArn is specified, ECS will download the container image anonymously.
+  EcsImageId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Image::Id>
+    Default: /aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id
+    Description: >-
+      When deploying ECS clusters on EC2, the stack will create the Auto Scaling group with ECS container instances based on this Amazon Machine Image (AMI).
   ImageUri:
     Type: String
     Default: satosa
     Description: >-
       The stack will deploy this Docker container image:tag.
+  InstanceType:
+    Type: String
+    Default: t3a.medium
+    Description: >-
+      When deploying ECS clusters on EC2, the stack will create the Auto Scaling group with ECS container instances based on this EC2 instance type.
+  LaunchType:
+    Type: String
+    Default: FARGATE
+    Description: >-
+      The stack will deploy ECS-managed containers using Fargate or EC2.
+      Selecting EC2 will create an Auto Scaling group of t3a.micro instances for the cluster.
+      For more information on launch types, refer to https://docs.aws.amazon.com/AmazonECS/latest/developerguide/launch_types.html.
+    AllowedValues:
+      - EC2
+      - FARGATE
   PrivateSubnet1Cidr:
     Type: String
     Default: 192.168.128.0/18
@@ -149,10 +203,14 @@ Parameters:
 
 
 Conditions:
+  WithEC2:
+    !Equals [ !Ref LaunchType, EC2 ]
   WithEcrPrivateRepo:
     !Not [ !Equals [ !Ref EcrPrivateRepoArn, '' ] ]
   WithExistingVpc:
     !Equals [ !Ref VpcType, Existing ]
+  WithFargate:
+    !Equals [ !Ref LaunchType, FARGATE ]
   WithNewVpc:
     !Equals [ !Ref VpcType, New ]
   WithRepositoryCredentials:
@@ -432,7 +490,7 @@ Resources:
         HttpCode: '200'
       Port: 8080
       Protocol: HTTP
-      TargetType: ip
+      TargetType: !If [ WithFargate, ip, instance ]
       UnhealthyThresholdCount: 4
       VpcId: !If [ WithNewVpc, !Ref VPC, !Ref VpcId ]
   GreenAlbTargetGroup:
@@ -448,7 +506,7 @@ Resources:
         HttpCode: '200'
       Port: 80
       Protocol: HTTP
-      TargetType: ip
+      TargetType: !If [ WithFargate, ip, instance ]
       UnhealthyThresholdCount: 4
       VpcId: !If [ WithNewVpc, !Ref VPC, !Ref VpcId ]
   LoadBalancer:
@@ -498,6 +556,100 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /${AWS::StackName}/ecs
+
+  # deploy the ECS cluster
+  EcsCluster:
+    Type: AWS::ECS::Cluster
+
+  # conditionally host the ECS cluster on EC2
+  EcsRole:
+    Type: AWS::IAM::Role
+    Condition: WithEC2
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: !Sub ec2.${AWS::URLSuffix}
+      ManagedPolicyArns:        # FIXME: least privileged access
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
+  EcsInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Condition: WithEC2
+    Properties:
+      Roles:
+        - !Ref EcsRole
+  EcsLaunchConfiguration:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Condition: WithEC2
+    Metadata:
+      AWS::CloudFormation::Init:
+        config:
+          commands:
+            01_add_instance_to_cluster:
+              command: !Sub echo ECS_CLUSTER=${EcsCluster} > /etc/ecs/ecs.config
+          files:
+            # allows CloudFormation to make updates to running EC2
+            # instances via the UpdateStack API action, cf.,
+            # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-hup.html
+            /etc/cfn/cfn-hup.conf:
+              mode: 00400
+              owner: root
+              group: root
+              content: !Sub |
+                [main]
+                stack=${AWS::StackId}
+                region=${AWS::Region}
+            # cf., https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-init.html
+            /etc/cfn/hooks.d/cfn-auto-reloader.conf:
+              content: !Sub |
+                [cfn-auto-reloader-hook]
+                triggers=post.update
+                path=Resources.EcsLaunchConfiguration.Metadata.AWS::CloudFormation::Init
+                action=/opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource EcsLaunchConfiguration --region ${AWS::Region}
+          services:
+            sysvinit:
+              cfn-hup:
+                enabled: true
+                ensureRunning: true
+                files:
+                  - /etc/cfn/cfn-hup.conf
+                  - /etc/cfn/hooks.d/cfn-auto-reloader.conf
+    Properties:
+      ImageId: !Ref EcsImageId
+      InstanceType: !Ref InstanceType
+      IamInstanceProfile: !Ref EcsInstanceProfile
+      SecurityGroups:
+        - !Ref EcsSecurityGroup
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum install -y aws-cfn-bootstrap
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource EcsLaunchConfiguration --region ${AWS::Region}
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource EcsAutoScalingGroup --region ${AWS::Region}
+  EcsAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Condition: WithEC2
+    Properties:
+      MinSize: !Ref ClusterMinSize
+      MaxSize: !Ref ClusterMaxSize
+      DesiredCapacity: !Ref ClusterDesiredSize
+      LaunchConfigurationName: !Ref EcsLaunchConfiguration
+      VPCZoneIdentifier:
+        Fn::If:
+          - WithNewVpc
+          - [ !Ref PrivateSubnet1, !Ref PrivateSubnet2 ]
+          - [ !Ref PrivateSubnet1Id, !Ref PrivateSubnet2Id ]
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT15M
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        MinInstancesInService: 1
+        MaxBatchSize: 1
+        PauseTime: PT15M
+        WaitOnResourceSignals: true
 
   # controls what the ECS agent can do,
   # cf. https://blog.ruanbekker.com/blog/2021/07/31/difference-with-ecs-task-and-execution-iam-roles-on-aws/
@@ -578,9 +730,22 @@ Resources:
             Action: kms:Decrypt
             Resource: !Ref SecretsManagerEncryptionKeyArn
 
+  EcsService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref EcsCluster
+      DesiredCount: 1
+      DeploymentController:
+        Type: EXTERNAL
   BlueTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
+      Family: !Ref AWS::StackName
+      RequiresCompatibilities:
+        - !Ref LaunchType
+      NetworkMode: !If [ WithFargate, awsvpc, bridge ]
+      Cpu: 2048
+      Memory: !If [ WithFargate, 4096, 3884 ]
       ExecutionRoleArn: !GetAtt TaskExecRole.Arn
       ContainerDefinitions:
         - Name: SATOSA
@@ -595,44 +760,32 @@ Resources:
             - HostPort: 8080
               Protocol: tcp
               ContainerPort: 8080
-      RequiresCompatibilities:
-        - FARGATE
-      NetworkMode: awsvpc
-      Cpu: 256
-      Memory: 512
-      Family: ecs-demo
-  EcsCluster:
-    Type: AWS::ECS::Cluster
-  EcsService:
-    Type: AWS::ECS::Service
-    Properties:
-      Cluster: !Ref EcsCluster
-      DesiredCount: 1
-      DeploymentController:
-        Type: EXTERNAL
   BlueTaskSet:
     Type: AWS::ECS::TaskSet
     Properties:
+      LaunchType: !Ref LaunchType
       Cluster: !Ref EcsCluster
-      LaunchType: FARGATE
-      NetworkConfiguration:
-        AwsVpcConfiguration:
-          AssignPublicIp: ENABLED
-          SecurityGroups:
-            - !Ref EcsSecurityGroup
-          Subnets:
-            - !If [ WithNewVpc, !Ref PrivateSubnet1, !Ref PrivateSubnet1Id ]
-            - !If [ WithNewVpc, !Ref PrivateSubnet2, !Ref PrivateSubnet2Id ]
-      PlatformVersion: 1.4.0
-      Scale:
-        Unit: PERCENT
-        Value: 100
       Service: !Ref EcsService
       TaskDefinition: !Ref BlueTaskDefinition
+      PlatformVersion: !If [ WithFargate, 1.4.0, !Ref AWS::NoValue ]
+      NetworkConfiguration:
+        Fn::If:
+          - WithFargate
+          - AwsVpcConfiguration:
+              AssignPublicIp: ENABLED
+              SecurityGroups:
+                - !Ref EcsSecurityGroup
+              Subnets:
+                - !If [ WithNewVpc, !Ref PrivateSubnet1, !Ref PrivateSubnet1Id ]
+                - !If [ WithNewVpc, !Ref PrivateSubnet2, !Ref PrivateSubnet2Id ]
+          - !Ref AWS::NoValue
       LoadBalancers:
         - ContainerName: SATOSA
           ContainerPort: 8080
           TargetGroupArn: !Ref BlueAlbTargetGroup
+      Scale:
+        Unit: PERCENT
+        Value: 100
   PrimaryTaskSet:
     Type: AWS::ECS::PrimaryTaskSet
     Properties:
