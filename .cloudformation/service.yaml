@@ -17,10 +17,16 @@ Metadata:
         default: ECS Cluster - Maximum Size
       ClusterMinSize:
         default: ECS Cluster - Minimum Size
+      DomainName:
+        default: Domain Name
       EcrPrivateRepoArn:
         default: ECR Private Repository ARN
       EcsImageId:
         default: ECS Image ID
+      HostedZoneId:
+        default: Route 53 Hosted Zone ID
+      Hostname:
+        default: Hostname
       ImageUri:
         default: Container Image URI
       InstanceType:
@@ -58,6 +64,9 @@ Metadata:
       - Label:
           default: Service Configuration
         Parameters:
+          - Hostname
+          - DomainName
+          - HostedZoneId
           - CertificateArn
       - Label:
           default: Service Networking
@@ -109,6 +118,10 @@ Parameters:
     Default: 2
     Description: >-
       When deploying ECS clusters on EC2, the stack will create the Auto Scaling group with at least this many ECS container instances.
+  DomainName:
+    Type: String
+    Description: >-
+      The domain name of the service, e.g., for "aai.example.com", the domain name would be "example.com".
   EcrPrivateRepoArn:
     Type: String
     Default: ''
@@ -120,6 +133,16 @@ Parameters:
     Default: ''
     Description: >-
       When deploying ECS clusters on EC2, the stack will create the Auto Scaling group with ECS container instances based on this Amazon Machine Image (AMI).
+  HostedZoneId:
+    Type: String
+    Default: ''
+    Description: >-
+      (Optional) If specified, the service stack will create resource records for SATOSA in this Route 53 hosted zone.
+      Note that the Route 53 hosted zone MUST exist in the same partition/account as this stack.
+  Hostname:
+    Type: String
+    Description: >-
+      The short name of the service, e.g., for "aai.example.com", the hostname would be "aai".
   ImageUri:
     Type: String
     Default: satosa
@@ -225,8 +248,12 @@ Conditions:
     !Equals [ !Ref VpcType, New ]
   WithRepositoryCredentials:
     !Not [ !Equals [ !Ref RepositoryCredentialsSecretArn, '' ] ]
+  WithRoute53:
+    !Not [ !Equals [ !Ref HostedZoneId, '' ] ]
   WithSecretsManagerCustomKmsKey:
     !Not [ !Equals [ !Ref SecretsManagerEncryptionKeyArn, '' ] ]
+  WithThirdPartyDns:
+    !Equals [ !Ref HostedZoneId, '' ]
 
 
 Transform:
@@ -550,6 +577,18 @@ Resources:
               - TargetGroupArn: !Ref BlueAlbTargetGroup
                 Weight: 1
 
+  # conditionally register the load balancer in DNS
+  DnsRecord:
+    Type: AWS::Route53::RecordSet
+    Condition: WithRoute53
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Sub ${Hostname}.${DomainName}
+      Type: A                   # TODO: create second record set for AAAA (IPv6)
+      AliasTarget:
+        DNSName: !GetAtt LoadBalancer.DNSName
+        HostedZoneId: !GetAtt LoadBalancer.CanonicalHostedZoneID
+
   # configure logging
   EcsLogGroup:
     Type: AWS::Logs::LogGroup
@@ -802,3 +841,17 @@ Resources:
       Cluster: !Ref EcsCluster
       Service: !Ref EcsService
       TaskSetId: !GetAtt BlueTaskSet.Id
+
+
+Outputs:
+  LoadBalancerDnsName:
+    Condition: WithThirdPartyDns
+    Value: !GetAtt LoadBalancer.DNSName
+    Description: >-
+      Map the service's hostname to the load balancer's DNS name shown here.
+
+  LoadBalancerHostedZoneId:
+    Condition: WithThirdPartyDns
+    Value: !GetAtt LoadBalancer.CanonicalHostedZoneID
+    Description: >-
+      If creating an alias record set in Route 53 outside of this stack, use this value as the load balancer's canonical hosted zone ID.
