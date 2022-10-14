@@ -1,10 +1,14 @@
 {
     Parameters: {
+        CertificateArn: $ENV.CertificateArn,
         ClusterDesiredSize: $ENV.ClusterDesiredSize,
         ClusterMaxSize: $ENV.ClusterMaxSize,
         ClusterMinSize: $ENV.ClusterMinSize,
+        DomainName: $ENV.DomainName,
         EcrPrivateRepoArn: $ENV.EcrPrivateRepoArn,
         EcsImageId: $ENV.EcsImageId,
+        HostedZoneId: $ENV.HostedZoneId,
+        Hostname: $ENV.Hostname,
         ImageUri: $ENV.IMAGE_URI,
         InstanceType: $ENV.InstanceType,
         LaunchType: $ENV.LaunchType,
