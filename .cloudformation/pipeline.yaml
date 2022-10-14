@@ -674,16 +674,24 @@ Resources:
           - Name: REPOSITORY_URI
             Value: !GetAtt ECRRepo.RepositoryUri
           # template config variables
+          - Name: CertificateArn
+            Value: !If [ RequestCertificate, !Ref ServiceCertificate, !Ref CertificateArn ]
           - Name: ClusterDesiredSize
             Value: !Ref ClusterDesiredSize
           - Name: ClusterMaxSize
             Value: !Ref ClusterMaxSize
           - Name: ClusterMinSize
             Value: !Ref ClusterMinSize
+          - Name: DomainName
+            Value: !Ref DomainName
           - Name: EcrPrivateRepoArn
             Value: !GetAtt ECRRepo.Arn
           - Name: EcsImageId
             Value: !Ref EcsImageId
+          - Name: HostedZoneId
+            Value: !Ref HostedZoneId
+          - Name: Hostname
+            Value: !Ref Hostname
           - Name: InstanceType
             Value: !Ref InstanceType
           - Name: LaunchType
