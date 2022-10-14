@@ -559,6 +559,23 @@ Resources:
       Description: >-
         SATOSA's service provier back end will use this key-pair for SAML 2.0 request signing and response decryption.
 
+  # optionally request a certificate
+  ServiceCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Condition: RequestCertificate
+    Properties:
+      DomainName: !Sub ${Hostname}.${DomainName}
+      ValidationMethod: !Ref CertDcvMethod
+      DomainValidationOptions:
+        Fn::If:
+          - WithManualDnsDcv
+          - !Ref AWS::NoValue
+          -
+            - DomainName: !Sub ${Hostname}.${DomainName}
+              HostedZoneId: !Ref HostedZoneId
+      CertificateAuthortityArn: !If [ WithPublicCertificateAuthority, !Ref AWS::NoValue, !Ref CertificateAuthorityArn ]
+      CertificateTransparencyLoggingPreference: !Ref CtLoggingPref
+
   # run builds in a low-privilege service account
   CodeBuildServiceRole:
     Type: AWS::IAM::Role
@@ -701,23 +718,6 @@ Resources:
     Properties:
       ConnectionName: !Ref AWS::StackName
       ProviderType: !Ref GitServer
-
-  # optionally request a certificate
-  ServiceCertificate:
-    Type: AWS::CertificateManager::Certificate
-    Condition: RequestCertificate
-    Properties:
-      DomainName: !Sub ${Hostname}.${DomainName}
-      ValidationMethod: !Ref CertDcvMethod
-      DomainValidationOptions:
-        Fn::If:
-          - WithManualDnsDcv
-          - !Ref AWS::NoValue
-          -
-            - DomainName: !Sub ${Hostname}.${DomainName}
-              HostedZoneId: !Ref HostedZoneId
-      CertificateAuthortityArn: !If [ WithPublicCertificateAuthority, !Ref AWS::NoValue, !Ref CertificateAuthorityArn ]
-      CertificateTransparencyLoggingPreference: !Ref CtLoggingPref
 
   CodePipelineServiceRole:
     Type: AWS::IAM::Role
