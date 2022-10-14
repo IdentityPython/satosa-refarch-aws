@@ -476,17 +476,6 @@ Resources:
           IpProtocol: TCP
           FromPort: 443
           ToPort: 443
-  EcsSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    DependsOn: AlbSecurityGroup
-    Properties:
-      GroupDescription: !Sub ${AWS::StackName}-ecs
-      VpcId: !If [ WithNewVpc, !Ref VPC, !Ref VpcId ]
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 8080
-          ToPort: 8080
-          SourceSecurityGroupId: !Ref AlbSecurityGroup
   BlueAlbTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
@@ -570,6 +559,17 @@ Resources:
   # deploy the ECS cluster
   EcsCluster:
     Type: AWS::ECS::Cluster
+  EcsSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    DependsOn: AlbSecurityGroup
+    Properties:
+      GroupDescription: !Sub ${AWS::StackName}-ecs
+      VpcId: !If [ WithNewVpc, !Ref VPC, !Ref VpcId ]
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          SourceSecurityGroupId: !Ref AlbSecurityGroup
 
   # conditionally host the ECS cluster on EC2
   EcsRole:
