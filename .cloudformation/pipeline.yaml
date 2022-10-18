@@ -956,6 +956,11 @@ Resources:
 
 
 Outputs:                        # sorted alphabetically by output key name in the web console
+  ArtifactBucket:
+    Value: !Sub https://s3.console.aws.amazon.com/s3/buckets/${ArtifactBucket}?region=${AWS::Region}&tab=objects
+    Description: >-
+      Access the build artifacts here, specifically the service's CloudFormation template and template configuration file.
+
   CertificateArn:
     Condition: FinishManualDcv
     Value: !Ref ServiceCertificate
