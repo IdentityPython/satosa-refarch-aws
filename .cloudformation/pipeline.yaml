@@ -518,6 +518,11 @@ Resources:
                       - WithDefaultS3EncryptionKey
                       - !Sub arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/s3
                       - !Ref S3EncryptionKeyArn
+      LifecycleConfiguration:
+        Rules:
+          - Id: RemoveOldArtifacts
+            Status: Enabled
+            ExpirationInDays: 30
 
   # ECS tasks pull container images from here
   ECRRepo:
@@ -540,6 +545,25 @@ Resources:
                 - !Ref S3EncryptionKeyArn
       ImageScanningConfiguration:
         ScanOnPush: true
+      LifecyclePolicy:
+        LifecyclePolicyText: >-
+          {
+              "rules": [
+                  {
+                      "rulePriority": 1,
+                      "description": "Remove old images",
+                      "selection": {
+                          "tagStatus": "any",
+                          "countType": "sinceImagePushed",
+                          "countUnit": "days",
+                          "countNumber": 30
+                      },
+                      "action": {
+                          "type": "expire"
+                      }
+                  }
+              ]
+          }
 
   # store secrets in AWS Secrets Manager; note that the initial value,
   # 030373bb-ddf8-44d6-8213-7c9ff2339316, indicates the secret
