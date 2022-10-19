@@ -983,6 +983,11 @@ Outputs:                        # sorted alphabetically by output key name in th
       Manually complete the connection setup using the CodeStar Connections console.
       For more information, refer to https://docs.aws.amazon.com/dtconsole/latest/userguide/welcome-connections.html.
 
+  EcrRepoUrl:
+    Value: !Sub https://console.aws.amazon.com/ecr/repositories/private/${AWS::AccountId}/${ECRRepo}?region=${AWS::Region}
+    Description: >-
+      Access the private container image repository here.
+
   PipelineUrl:
     Value: !Sub https://console.aws.amazon.com/codepipeline/home?region=${AWS::Region}#/view/${Pipeline}
     Description: >-
