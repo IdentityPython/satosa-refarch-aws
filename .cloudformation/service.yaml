@@ -523,14 +523,14 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       HealthCheckIntervalSeconds: 5
-      HealthCheckPath: /
-      HealthCheckPort: '80'
+      HealthCheckPath: /ping
+      HealthCheckPort: '8080'
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 2
       HealthyThresholdCount: 2
       Matcher:
         HttpCode: '200'
-      Port: 80
+      Port: 8080
       Protocol: HTTP
       TargetType: !If [ WithFargate, ip, instance ]
       UnhealthyThresholdCount: 4
