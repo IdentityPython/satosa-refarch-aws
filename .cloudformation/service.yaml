@@ -498,7 +498,6 @@ Resources:
           IpProtocol: TCP
           FromPort: 80
           ToPort: 80
-      SecurityGroupIngress:
         - CidrIp: 0.0.0.0/0
           IpProtocol: TCP
           FromPort: 443
