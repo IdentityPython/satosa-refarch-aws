@@ -792,8 +792,10 @@ Resources:
       RequiresCompatibilities:
         - !Ref LaunchType
       NetworkMode: !If [ WithFargate, awsvpc, bridge ]
-      Cpu: 2048
-      Memory: !If [ WithFargate, 4096, 3884 ]
+      # NB: Cpu and Memory must be string values, not integers, due to
+      # a bug in the AWS::CodeDeploy::BlueGreen hook
+      Cpu: '2048'
+      Memory: !If [ WithFargate, '4096', '3884' ]
       ExecutionRoleArn: !GetAtt TaskExecRole.Arn
       ContainerDefinitions:
         - Name: SATOSA
