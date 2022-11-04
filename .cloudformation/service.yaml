@@ -616,8 +616,8 @@ Resources:
     Properties:
       AssumeRolePolicyDocument:
         Statement:
-          - Action: sts:AssumeRole
-            Effect: Allow
+          - Effect: Allow
+            Action: sts:AssumeRole
             Principal:
               Service: !Sub ec2.${AWS::URLSuffix}
       ManagedPolicyArns:        # FIXME: least privileged access
@@ -707,11 +707,10 @@ Resources:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
-          - Sid: ''
-            Effect: Allow
+          - Effect: Allow
+            Action: sts:AssumeRole
             Principal:
               Service: !Sub ecs-tasks.${AWS::URLSuffix}
-            Action: sts:AssumeRole
       Policies:
         - PolicyName: Logging
           PolicyDocument:
