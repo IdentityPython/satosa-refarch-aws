@@ -818,16 +818,13 @@ Resources:
       TaskDefinition: !Ref BlueTaskDefinition
       PlatformVersion: !If [ WithFargate, 1.4.0, !Ref AWS::NoValue ]
       NetworkConfiguration:
-        Fn::If:
-          - WithFargate
-          - AwsVpcConfiguration:
-              AssignPublicIp: ENABLED
-              SecurityGroups:
-                - !Ref EcsSecurityGroup
-              Subnets:
-                - !If [ WithNewVpc, !Ref PrivateSubnet1, !Ref PrivateSubnet1Id ]
-                - !If [ WithNewVpc, !Ref PrivateSubnet2, !Ref PrivateSubnet2Id ]
-          - !Ref AWS::NoValue
+        AwsVpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - !Ref EcsSecurityGroup
+          Subnets:
+            - !If [ WithNewVpc, !Ref PrivateSubnet1, !Ref PrivateSubnet1Id ]
+            - !If [ WithNewVpc, !Ref PrivateSubnet2, !Ref PrivateSubnet2Id ]
       LoadBalancers:
         - ContainerName: SATOSA
           ContainerPort: 8080
