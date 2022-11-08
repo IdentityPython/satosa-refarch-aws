@@ -736,6 +736,10 @@ Resources:
             Value: !Ref PublicSubnet2Cidr
           - Name: PublicSubnet2Id
             Value: !Ref PublicSubnet2Id
+          - Name: Saml2BackEndKeyPairSecret
+            Value: !Ref Saml2BackEndKeyPairSecret
+          - Name: Saml2FrontEndKeyPairSecret
+            Value: !Ref Saml2FrontEndKeyPairSecret
           - Name: VpcCidr
             Value: !Ref VpcCidr
           - Name: VpcId
