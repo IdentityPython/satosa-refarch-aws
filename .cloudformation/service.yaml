@@ -68,6 +68,7 @@ Metadata:
           - DomainName
           - HostedZoneId
           - CertificateArn
+          - SecretsManagerEncryptionKeyArn
       - Label:
           default: Service Networking
         Parameters:
@@ -94,7 +95,6 @@ Metadata:
           - ImageUri
           - EcrPrivateRepoArn
           - RepositoryCredentialsSecretArn
-          - SecretsManagerEncryptionKeyArn
 
 
 Parameters:
