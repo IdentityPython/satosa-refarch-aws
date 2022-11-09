@@ -755,6 +755,8 @@ Resources:
             Value: !Ref Saml2BackEndKeyPairSecret
           - Name: Saml2FrontEndKeyPairSecret
             Value: !Ref Saml2FrontEndKeyPairSecret
+          - Name: SecretsManagerEncryptionKeyArn
+            Value: !Ref SecretsManagerEncryptionKeyArn
           - Name: VpcCidr
             Value: !Ref VpcCidr
           - Name: VpcId
