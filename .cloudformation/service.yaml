@@ -51,6 +51,10 @@ Metadata:
         default: Existing VPC Public Subnet 2 ID
       RepositoryCredentialsSecretArn:
         default: Image Repository Credentials Secret ARN
+      Saml2BackEndKeyPairSecretArn:
+        default: Service Provider Key-Pair Secret ARN
+      Saml2FrontEndKeyPairSecretArn:
+        default: Identity Provider Key-Pair Secret ARN
       SecretsManagerEncryptionKeyArn:
         default: Custom KMS Key ARN for Secrets Manager Encryption
       VpcCidr:
@@ -69,6 +73,8 @@ Metadata:
           - HostedZoneId
           - CertificateArn
           - SecretsManagerEncryptionKeyArn
+          - Saml2BackEndKeyPairSecretArn
+          - Saml2FrontEndKeyPairSecretArn
       - Label:
           default: Service Networking
         Parameters:
@@ -210,6 +216,14 @@ Parameters:
       (Optional) If specified, the ECS task execution role will use container image repository credentials stored in this AWS Secrets Manager secret.
       For more information, refer to https://docs.aws.amazon.com/AmazonECS/latest/developerguide/private-auth.html.
       If neither this parameter nor EcrPrivateRepoArn is specified, ECS will download the container image anonymously.
+  Saml2BackEndKeyPairSecretArn:
+    Type: String
+    Description: >-
+      SATOSA's service provier back end will use this key-pair, stored in Amazon Secrets Manager, for SAML 2.0 request signing and response decryption.
+  Saml2FrontEndKeyPairSecretArn:
+    Type: String
+    Description: >-
+      SATOSA's identity provider front end will use this key-pair, stored in Amazon Secrets Manager, for SAML 2.0 response signing.
   SecretsManagerEncryptionKeyArn:
     Type: String
     Default: ''
