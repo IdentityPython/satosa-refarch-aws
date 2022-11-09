@@ -52,7 +52,7 @@ Metadata:
       RepositoryCredentialsSecretArn:
         default: Image Repository Credentials Secret ARN
       SecretsManagerEncryptionKeyArn:
-        default: Custom KMS Key for Secrets Manager Encryption
+        default: Custom KMS Key ARN for Secrets Manager Encryption
       VpcCidr:
         default: New VPC IPv4 CIDR Block
       VpcId:
@@ -214,7 +214,7 @@ Parameters:
     Type: String
     Default: ''
     Description: >-
-      (Optional) All AWS Secrets Manager secrets will be encrypted/decrypted with this custom KMS key instead of the default.
+      (Optional) The stack will encrypt and decrypt Secrets Manager secrets with a KMS key identified by this ARN instead of the default.
   VpcCidr:
     Type: String
     Default: 192.168.0.0/16
