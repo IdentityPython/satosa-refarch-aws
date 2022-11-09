@@ -20,6 +20,7 @@
         PublicSubnet1Id: $ENV.PublicSubnet1Id,
         PublicSubnet2Cidr: $ENV.PublicSubnet2Cidr,
         PublicSubnet2Id: $ENV.PublicSubnet2Id,
+        SecretsManagerEncryptionKeyArn: $ENV.SecretsManagerEncryptionKeyArn,
         VpcCidr: $ENV.VpcCidr,
         VpcId: $ENV.VpcId,
         VpcType: $ENV.VpcType
