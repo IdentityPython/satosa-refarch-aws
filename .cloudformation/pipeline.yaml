@@ -568,13 +568,6 @@ Resources:
   # store secrets in AWS Secrets Manager; note that the initial value,
   # 030373bb-ddf8-44d6-8213-7c9ff2339316, indicates the secret
   # requires initialization, which happens at build time
-  Saml2FrontEndKeyPairSecret:
-    Type: AWS::SecretsManager::Secret
-    Properties:
-      SecretString: 030373bb-ddf8-44d6-8213-7c9ff2339316
-      KmsKeyId: !If [ WithSecretsManagerCustomKmsKey, !Ref SecretsManagerEncryptionKeyArn, !Ref AWS::NoValue ]
-      Description: >-
-        SATOSA's identity provider front end will use this key-pair for SAML 2.0 response signing.
   Saml2BackEndKeyPairSecret:
     Type: AWS::SecretsManager::Secret
     Properties:
@@ -582,6 +575,13 @@ Resources:
       KmsKeyId: !If [ WithSecretsManagerCustomKmsKey, !Ref SecretsManagerEncryptionKeyArn, !Ref AWS::NoValue ]
       Description: >-
         SATOSA's service provier back end will use this key-pair for SAML 2.0 request signing and response decryption.
+  Saml2FrontEndKeyPairSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      SecretString: 030373bb-ddf8-44d6-8213-7c9ff2339316
+      KmsKeyId: !If [ WithSecretsManagerCustomKmsKey, !Ref SecretsManagerEncryptionKeyArn, !Ref AWS::NoValue ]
+      Description: >-
+        SATOSA's identity provider front end will use this key-pair for SAML 2.0 response signing.
 
   # optionally request a certificate
   ServiceCertificate:
