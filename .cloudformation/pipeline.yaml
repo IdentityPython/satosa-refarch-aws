@@ -668,6 +668,21 @@ Resources:
                   - ecr:UploadLayerPart
                   - ecr:CompleteLayerUpload
                 Resource: !GetAtt ECRRepo.Arn
+  SecretsManagerCustomKmsKeyPolicy:
+    Type: AWS::IAM::Policy
+    Condition: WithSecretsManagerCustomKmsKey
+    Properties:
+      PolicyName: !Sub ${AWS::StackName}-SecretsManagerCustomKmsKeyPolicy
+      Roles:
+        - !Ref CodeBuildServiceRole
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Actions:
+              - kms:Decrypt
+              - kms:Encrypt
+            Resource: !Ref SecretsManagerEncryptionKeyArn
 
   # deploy build servers in the private VPC, which works around
   # problems accessing Docker Hub anonymously
