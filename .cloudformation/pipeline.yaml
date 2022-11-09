@@ -751,9 +751,9 @@ Resources:
             Value: !Ref PublicSubnet2Cidr
           - Name: PublicSubnet2Id
             Value: !Ref PublicSubnet2Id
-          - Name: Saml2BackEndKeyPairSecret
+          - Name: Saml2BackEndKeyPairSecretArn
             Value: !Ref Saml2BackEndKeyPairSecret
-          - Name: Saml2FrontEndKeyPairSecret
+          - Name: Saml2FrontEndKeyPairSecretArn
             Value: !Ref Saml2FrontEndKeyPairSecret
           - Name: SecretsManagerEncryptionKeyArn
             Value: !Ref SecretsManagerEncryptionKeyArn
