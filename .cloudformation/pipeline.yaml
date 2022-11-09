@@ -61,8 +61,8 @@ Metadata:
         default: KMS Master Key ARN for S3 Server-side Encryption
       S3ServerSideEncryption:
         default: S3 Server-side Encryption
-      SecretsManagerEncryptionKeyId:
-        default: KMS Key ID for Secrets Manager Encryption
+      SecretsManagerEncryptionKeyArn:
+        default: Custom KMS Key ARN for Secrets Manager Encryption
       StackName:
         default: Service Stack Name
       VpcCidr:
@@ -81,7 +81,7 @@ Metadata:
           - GitRepoBranch
           - S3ServerSideEncryption
           - S3EncryptionKeyArn
-          - SecretsManagerEncryptionKeyId
+          - SecretsManagerEncryptionKeyArn
       - Label:
           default: Service Configuration
         Parameters:
@@ -274,11 +274,11 @@ Parameters:
     Default: ''
     Description: >-
       (Optional; SSE-KMS only) The CI/CD stack will use this symmetric KMS master key to encrypt the S3 storage instead of the default.
-  SecretsManagerEncryptionKeyId:
+  SecretsManagerEncryptionKeyArn:
     Type: String
     Default: ''
     Description: >-
-      (Optional) The CI/CD stack will encrypt Secrets Manager secrets with a KMS key identified by this ARN, key ID, or alias instead of the default.
+      (Optional) The CI/CD stack will encrypt Secrets Manager secrets with a KMS key identified by this ARN instead of the default.
   StackName:
     Type: String
     Description: >-
@@ -330,8 +330,8 @@ Conditions:
     !Equals [ !Ref S3ServerSideEncryption, SSE-S3 ]
   WithDefaultS3EncryptionKey:
     !Equals [ !Ref S3EncryptionKeyArn, '' ]
-  WithDefaultSecretsManagerKey:
-    !Equals [ !Ref SecretsManagerEncryptionKeyId, '' ]
+  WithSecretsManagerCustomKmsKey:
+    !Not [ !Equals [ !Ref SecretsManagerEncryptionKeyArn, '' ] ]
   WithManualDnsDcv:
     Fn::And:
       - Fn::Equals:
@@ -572,14 +572,14 @@ Resources:
     Type: AWS::SecretsManager::Secret
     Properties:
       SecretString: 030373bb-ddf8-44d6-8213-7c9ff2339316
-      KmsKeyId: !If [ WithDefaultSecretsManagerKey, !Ref AWS::NoValue, !Ref SecretsManagerEncryptionKeyId ]
+      KmsKeyId: !If [ WithSecretsManagerCustomKmsKey, !Ref SecretsManagerEncryptionKeyArn, !Ref AWS::NoValue ]
       Description: >-
         SATOSA's identity provider front end will use this key-pair for SAML 2.0 response signing.
   Saml2BackEndKeyPairSecret:
     Type: AWS::SecretsManager::Secret
     Properties:
       SecretString: 030373bb-ddf8-44d6-8213-7c9ff2339316
-      KmsKeyId: !If [ WithDefaultSecretsManagerKey, !Ref AWS::NoValue, !Ref SecretsManagerEncryptionKeyId ]
+      KmsKeyId: !If [ WithSecretsManagerCustomKmsKey, !Ref SecretsManagerEncryptionKeyArn, !Ref AWS::NoValue ]
       Description: >-
         SATOSA's service provier back end will use this key-pair for SAML 2.0 request signing and response decryption.
 
