@@ -17,8 +17,8 @@ phases:
     commands:
       - docker push "$IMAGE_URI"
       - jq -c -S -n -f .awscodepipeline/config.json.template > .awscodepipeline/config.json
-      - .awscodepipeline/generate-key-pair-secret.sh "${Saml2BackEndKeyPairSecret}" "${Hostname}.${DomainName}"
-      - .awscodepipeline/generate-key-pair-secret.sh "${Saml2FrontEndKeyPairSecret}" "${Hostname}.${DomainName}"
+      - .awscodepipeline/generate-key-pair-secret.sh "${Saml2BackEndKeyPairSecretArn}" "${Hostname}.${DomainName}"
+      - .awscodepipeline/generate-key-pair-secret.sh "${Saml2FrontEndKeyPairSecretArn}" "${Hostname}.${DomainName}"
 artifacts:
   discard-paths: yes
   files:
