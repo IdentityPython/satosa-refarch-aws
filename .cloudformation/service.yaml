@@ -833,12 +833,12 @@ Resources:
       PlatformVersion: !If [ WithFargate, 1.4.0, !Ref AWS::NoValue ]
       NetworkConfiguration:
         AwsVpcConfiguration:
-          AssignPublicIp: ENABLED
+          AssignPublicIp: !If [ WithFargate, ENABLED, DISABLED ]
           SecurityGroups:
-            - !Ref EcsSecurityGroup
+            - !If [ WithFargate, !Ref EcsSecurityGroup, !Ref AWS::NoValue ]
           Subnets:
-            - !If [ WithNewVpc, !Ref PrivateSubnet1, !Ref PrivateSubnet1Id ]
-            - !If [ WithNewVpc, !Ref PrivateSubnet2, !Ref PrivateSubnet2Id ]
+            - !If [ WithFargate, !If [ WithNewVpc, !Ref PrivateSubnet1, !Ref PrivateSubnet1Id ], !Ref AWS::NoValue ]
+            - !If [ WithFargate, !If [ WithNewVpc, !Ref PrivateSubnet2, !Ref PrivateSubnet2Id ], !Ref AWS::NoValue ]
       LoadBalancers:
         - ContainerName: SATOSA
           ContainerPort: 8080
