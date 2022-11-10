@@ -19,8 +19,8 @@ config:
       - contact_type: support
         email_address: support@example.com
         given_name: Support
-    key_file: frontend.key
-    cert_file: frontend.crt
+    key_file: /run/secrets/saml2_frontend/key
+    cert_file: /run/secrets/saml2_frontend/certificate
     metadata:
       remote:
         - url: https://samltest.id/saml/sp
