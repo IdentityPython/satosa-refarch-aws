@@ -668,6 +668,17 @@ Resources:
                   - ecr:UploadLayerPart
                   - ecr:CompleteLayerUpload
                 Resource: !GetAtt ECRRepo.Arn
+        - PolicyName: KeymatHandling
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                  - secretsmanager:PutSecretValue
+                Resource:
+                  - !Ref Saml2BackEndKeyPairSecret
+                  - !Ref Saml2FrontEndKeyPairSecret
   SecretsManagerCustomKmsKeyPolicy:
     Type: AWS::IAM::Policy
     Condition: WithSecretsManagerCustomKmsKey
