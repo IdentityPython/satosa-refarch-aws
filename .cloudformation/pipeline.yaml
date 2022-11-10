@@ -866,9 +866,10 @@ Resources:
   Pipeline:
     Type: AWS::CodePipeline::Pipeline
     DependsOn:
-      - CodePipelineServiceRole
-      - CloudFormationActionRole
       - ArtifactBucket
+      - CloudFormationActionRole
+      - CodePipelineServiceRole
+      - CodePipelineServiceRolePolicy
     Properties:
       RoleArn: !GetAtt CodePipelineServiceRole.Arn
       ArtifactStore:
