@@ -612,6 +612,16 @@ Resources:
         DNSName: !GetAtt LoadBalancer.DNSName
         HostedZoneId: !GetAtt LoadBalancer.CanonicalHostedZoneID
 
+  # generate and manage the SATOSA state encryption key
+  StateEncryptionKeySecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      GenerateSecretString:
+        ExcludePunctuation: true
+      KmsKeyId: !If [ WithSecretsManagerCustomKmsKey, !Ref SecretsManagerEncryptionKeyArn, !Ref AWS::NoValue ]
+      Description: >-
+        SATOSA uses cookies encrypted with this key to track the progress of an authentication flow.
+
   # configure logging
   EcsLogGroup:
     Type: AWS::Logs::LogGroup
@@ -754,6 +764,7 @@ Resources:
                 Resource:
                   - !Ref Saml2BackEndKeyPairSecretArn
                   - !Ref Saml2FrontEndKeyPairSecretArn
+                  - !Ref StateEncryptionKeySecret
   # either give the ECS agent read-only access to the ECR private
   # repository that holds the container image to be deployed,...
   EcrPrivateRepoPolicy:
@@ -845,6 +856,8 @@ Resources:
               ValueFrom: !Ref Saml2BackEndKeyPairSecretArn
             - Name: saml2_frontend
               ValueFrom: !Ref Saml2FrontEndKeyPairSecretArn
+            - Name: state_encryption_key
+              ValueFrom: !Ref StateEncryptionKeySecret
           # if the secret/parameter is a string (i.e., Keys is null),
           # create /run/secrets/<SECRET> containing the secret's
           # value; if the secret is a JSON mapping, create
@@ -866,6 +879,10 @@ Resources:
                           "certificate",
                           "key"
                       ]
+                  },
+                  {
+                      "Name": "state_encryption_key",
+                      "Keys": null
                   }
               ]
           LogConfiguration:
@@ -889,6 +906,9 @@ Resources:
             - HostPort: 8080
               Protocol: tcp
               ContainerPort: 8080
+          Environment:
+            - Name: STATE_ENCRYPTION_KEY_FILE
+              Value: /run/secrets/state_encryption_key
           LogConfiguration:
             LogDriver: awslogs
             Options:
