@@ -534,6 +534,8 @@ Resources:
           Value: true
         - Key: stickiness.type
           Value: lb_cookie
+        - Key: stickiness.lb_cookie.duration_seconds
+          Value: 900
       TargetType: !If [ WithFargate, ip, instance ]
       UnhealthyThresholdCount: 4
       VpcId: !If [ WithNewVpc, !Ref VPC, !Ref VpcId ]
@@ -555,6 +557,8 @@ Resources:
           Value: true
         - Key: stickiness.type
           Value: lb_cookie
+        - Key: stickiness.lb_cookie.duration_seconds
+          Value: 900
       TargetType: !If [ WithFargate, ip, instance ]
       UnhealthyThresholdCount: 4
       VpcId: !If [ WithNewVpc, !Ref VPC, !Ref VpcId ]
@@ -599,6 +603,9 @@ Resources:
             TargetGroups:
               - TargetGroupArn: !Ref BlueAlbTargetGroup
                 Weight: 1
+            TargetGroupStickinessConfig:
+              Enabled: true
+              DurationSeconds: 900
 
   # conditionally register the load balancer in DNS
   DnsRecord:
