@@ -745,6 +745,15 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: !GetAtt EcsLogGroup.Arn
+        - PolicyName: ReadSecrets
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource:
+                  - !Ref Saml2BackEndKeyPairSecretArn
+                  - !Ref Saml2FrontEndKeyPairSecretArn
   # either give the ECS agent read-only access to the ECR private
   # repository that holds the container image to be deployed,...
   EcrPrivateRepoPolicy:
@@ -819,9 +828,53 @@ Resources:
       # bug in the AWS::CodeDeploy::BlueGreen hook
       Cpu: '2048'
       Memory: !If [ WithFargate, '4096', '3884' ]
+      # cf. https://docs.aws.amazon.com/AmazonECS/latest/developerguide/using_data_volumes.html
+      Volumes:
+        - Name: secrets         # store secrets on local ephemeral storage
       ExecutionRoleArn: !GetAtt TaskExecRole.Arn
       ContainerDefinitions:
-        - Name: SATOSA
+        - Name: secrets-sidecar
+          Image: docker/ecs-secrets-sidecar:1.0
+          Essential: false
+          MountPoints:
+            - ContainerPath: /run/secrets/
+              SourceVolume: secrets
+          # copy secrets/parameters to the named environment variables
+          Secrets:
+            - Name: saml2_backend
+              ValueFrom: !Ref Saml2BackEndKeyPairSecretArn
+            - Name: saml2_frontend
+              ValueFrom: !Ref Saml2FrontEndKeyPairSecretArn
+          # if the secret/parameter is a string (i.e., Keys is null),
+          # create /run/secrets/<SECRET> containing the secret's
+          # value; if the secret is a JSON mapping, create
+          # /run/secrets/<SECRET>/<KEY> containing the value of each
+          # of the named keys in the secret
+          Command:
+            - >-
+              [
+                  {
+                      "Name": "saml2_backend",
+                      "Keys": [
+                          "certificate",
+                          "key"
+                      ]
+                  },
+                  {
+                      "Name": "saml2_frontend",
+                      "Keys": [
+                          "certificate",
+                          "key"
+                      ]
+                  }
+              ]
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref EcsLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: task
+        - Name: satosa
           RepositoryCredentials:
             Fn::If:
               - WithRepositoryCredentials
@@ -829,10 +882,19 @@ Resources:
               - !Ref AWS::NoValue
           Image: !Ref ImageUri
           Essential: true
+          MountPoints:
+            - ContainerPath: /run/secrets/
+              SourceVolume: secrets
           PortMappings:
             - HostPort: 8080
               Protocol: tcp
               ContainerPort: 8080
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref EcsLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: task
   BlueTaskSet:
     Type: AWS::ECS::TaskSet
     Properties:
@@ -850,7 +912,7 @@ Resources:
             - !If [ WithFargate, !If [ WithNewVpc, !Ref PrivateSubnet1, !Ref PrivateSubnet1Id ], !Ref AWS::NoValue ]
             - !If [ WithFargate, !If [ WithNewVpc, !Ref PrivateSubnet2, !Ref PrivateSubnet2Id ], !Ref AWS::NoValue ]
       LoadBalancers:
-        - ContainerName: SATOSA
+        - ContainerName: satosa
           ContainerPort: 8080
           TargetGroupArn: !Ref BlueAlbTargetGroup
       Scale:
