@@ -11,8 +11,8 @@ config:
   sp_config:
     name: SP Name
     description: SP Description
-    key_file: backend.key
-    cert_file: backend.crt
+    key_file: /run/secrets/saml2_backend/key
+    cert_file: /run/secrets/saml2_backend/certificate
     organization:
       display_name: Example Identities
       name: Example Identities Org.
