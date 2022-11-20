@@ -3,9 +3,9 @@
 . /usr/local/bin/docker-entrypoint.sh
 
 if ! _is_sourced; then
-	# delay start until keymat appears (max. ~300s); works around
+	# delay start until keymat appears (default max. ~300s); cf.
 	# https://github.com/aws-cloudformation/cloudformation-coverage-roadmap/issues/680
-	i=300
+	i=${STARTUP_DELAY}
 	while [ $i -gt 0 ]; do
 		((i--))
 		sleep 1
