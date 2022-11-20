@@ -633,7 +633,7 @@ Resources:
   EcsLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /${AWS::StackName}/ecs
+      LogGroupName: !Sub /ecs/${AWS::StackName}
 
   # deploy the ECS cluster
   EcsCluster:
