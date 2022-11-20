@@ -1,0 +1,4 @@
+module: static_content.StaticContentFrontend
+name: sp_metadata
+config:
+  file: backend.xml

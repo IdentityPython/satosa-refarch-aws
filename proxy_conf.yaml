@@ -11,6 +11,8 @@ BACKEND_MODULES:
 FRONTEND_MODULES:
   - plugins/frontends/saml2_frontend.yaml
   - plugins/frontends/ping_frontend.yaml
+  - plugins/frontends/idp_metadata.yaml
+  - plugins/frontends/sp_metadata.yaml
 MICRO_SERVICES:
   - plugins/microservices/static_attributes.yaml
 LOGGING:

@@ -1,0 +1,4 @@
+module: static_content.StaticContentFrontend
+name: idp_metadata
+config:
+  file: frontend.xml
