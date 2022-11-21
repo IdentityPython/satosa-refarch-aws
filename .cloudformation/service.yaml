@@ -632,6 +632,7 @@ Resources:
   # configure logging
   EcsLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
     Properties:
       LogGroupName: !Sub /ecs/${AWS::StackName}
 
@@ -956,6 +957,11 @@ Resources:
 
 
 Outputs:
+  EcsLogGroupName:
+    Value: !Ref EcsLogGroup
+    Description: >-
+      Use the name of the ECS cluster's log group to manage its retention policy, which is not controlled by this CloudFormation template.
+
   LoadBalancerDnsName:
     Condition: WithThirdPartyDns
     Value: !GetAtt LoadBalancer.DNSName
