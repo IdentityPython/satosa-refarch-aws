@@ -84,5 +84,5 @@ Please follow [Angular Commit Message Conventions](https://github.com/angular/an
 - **git**: Git repository configuration or GitHub-specific files; includes [.gitignore](.gitignore), [.gitattributes](.gitattributes), and [the GitHub Actions workflows](.github/workflows)
 - **proxy_conf**, **saml2_backend**, **saml2_frontend**, etc.: SATOSA/plugin configuration
 - **static_content**: a custom SATOSA front end used to serve metadata files
-- **license**: software licensing information, specificaly [LICENSE.md](LICENSE.md)
+- **license**: software licensing information, specifically [LICENSE.md](LICENSE.md)
 - **readme**: this file
